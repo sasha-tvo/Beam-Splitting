@@ -1,0 +1,13 @@
+<map id="BeamSplitting" name="BeamSplitting">
+<area shape="rect" id="node2" href="$class_crystal.html" title="This class contains all information about particle&#39;s geometry and the parameters of tracing..." alt="" coords="158,233,221,260"/>
+<area shape="rect" id="node3" href="$class_bullet.html" title="This class defines the hexagonal bullet. " alt="" coords="295,5,350,32"/>
+<area shape="rect" id="node4" href="$class_cavity_prism.html" title="This class defines the hexagonal prism with cavity on bottom. " alt="" coords="277,56,368,83"/>
+<area shape="rect" id="node5" href="$class_cup.html" title="This class defines the cupped prism. " alt="" coords="300,107,345,133"/>
+<area shape="rect" id="node6" href="$class_dodecahedron.html" title="This class defines the dodecahedron. " alt="" coords="270,157,375,184"/>
+<area shape="rect" id="node7" href="$class_parallelepiped.html" title="This class defines the parallelepiped. " alt="" coords="271,208,374,235"/>
+<area shape="rect" id="node8" href="$class_prism.html" title="This class defines hexagonal prism. " alt="" coords="295,259,351,285"/>
+<area shape="rect" id="node9" href="$class_pyramid.html" title="This class defines the pyramid. " alt="" coords="287,309,358,336"/>
+<area shape="rect" id="node10" href="$class_tapered_prism.html" title="This class defines the hexagonal tapered prism. " alt="" coords="271,360,374,387"/>
+<area shape="rect" id="node11" href="$class_tetrahedron.html" title="This class defines the tetrahedron. " alt="" coords="277,411,368,437"/>
+<area shape="rect" id="node12" href="$class_triangle_prism.html" title="This class defines the triangle prism. " alt="" coords="272,461,373,488"/>
+</map>

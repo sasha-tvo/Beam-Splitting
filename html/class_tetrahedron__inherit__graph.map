@@ -1,0 +1,5 @@
+<map id="Tetrahedron" name="Tetrahedron">
+<area shape="rect" id="node2" href="$class_crystal.html" title="This class contains all information about particle&#39;s geometry and the parameters of tracing..." alt="" coords="55,80,117,107"/>
+<area shape="rect" id="node3" href="$class_frame.html" title="This class is a prototype for Crystal class. " alt="" coords="5,5,64,32"/>
+<area shape="rect" id="node4" href="$class_beam_splitting.html" title="This class is a prototype for Crystal class. It contains parameters for BeamSplitting algorithm..." alt="" coords="89,5,191,32"/>
+</map>
