@@ -23,7 +23,7 @@ void  Rot(const Point3D& e, const Point3D& E, const Point3D& v, matrixC &m)
 		if(fabs(cs) > 1.0+DBL_EPSILON)  throw " Rot: Error!";
 	#endif 
 	double angl = acos(cs); 
-	Point3D k = e%E;   
+    Point3D k = e%E;
 	k /= length(k);
 	if(norm(k+v) <= 0.5) angl = -angl;   
 	double  sn = sin(angl); // the rotation of matrix "m"

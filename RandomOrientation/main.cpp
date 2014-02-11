@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
 			cout << "\nError! Incorrect input file. Press any key for exit.";
 			getch(); return 1;
 		}
-	}
+	}   
 	catch(const char* s) {
 		cout << endl << s << "\nPress any key.";
 		getch(); return 1;
@@ -162,11 +162,16 @@ int main(int argc, char* argv[])
 	try {
 		for(unsigned int i=0; i<BettaNumber; i++) {
 			if(!i) cout << "\n" << 0;
-			tetta = (i+0.5)*NormBettaAngle;
+            //tetta = (i+0.5)*NormBettaAngle;
 			for(unsigned int j=0; j<GammaNumber; j++) {
-				gamma = (j+0.5)*NormGammaAngle;
+                //gamma = (j+0.5)*NormGammaAngle;
+                gamma=2.0*M_PI*((double)(rand()) / ((double)RAND_MAX+1.0));
+                tetta=acos(((double)(rand()) / ((double)RAND_MAX))*2.0-1.0);
+                //tetta=2.0*M_PI/3.0;
+
 				Body->ChangePosition(tetta, gamma,0.0);
-				P = sin(tetta);
+                //P = sin(tetta);
+                P=1.0;
 				s += P*Body->FTforConvexCrystal(Handler);
 				if(!(j%100)) cout<<'.';
 			}
@@ -277,7 +282,7 @@ void  Handler(Beam& bm)
 			if(tmp > DBL_EPSILON) {
 				tmp = acos(bm.r.x/sqrt(SQR(bm.r.x)+tmp));
 				if(bm.r.y<0) tmp = m_2pi-tmp;
-					tmp *= 2;
+                    tmp *= -2.0;
 				double cs = cos(tmp), sn = sin(tmp);
 				RightRotateMueller(bf, cs, sn);
 			}
