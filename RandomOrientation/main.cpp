@@ -64,6 +64,7 @@ void DelFace(void);
 /// Main()
 int main(int argc, char* argv[])
 {
+    srand (time(NULL));
 	QCoreApplication a(argc, argv); ///< QT needs it
 	ShowTitle();
 	cout << "\nLoading settings... ";
@@ -163,11 +164,13 @@ int main(int argc, char* argv[])
 		for(unsigned int i=0; i<BettaNumber; i++) {
 			if(!i) cout << "\n" << 0;
             //tetta = (i+0.5)*NormBettaAngle;
-			for(unsigned int j=0; j<GammaNumber; j++) {
+            for(unsigned int j=0; j<GammaNumber; j++) {
                 //gamma = (j+0.5)*NormGammaAngle;
                 gamma=2.0*M_PI*((double)(rand()) / ((double)RAND_MAX+1.0));
                 tetta=acos(((double)(rand()) / ((double)RAND_MAX))*2.0-1.0);
                 //tetta=2.0*M_PI/3.0;
+                //gamma=M_PI/6.0;
+                //tetta=10*M_PI/180.0;
 
 				Body->ChangePosition(tetta, gamma,0.0);
                 //P = sin(tetta);
@@ -224,7 +227,7 @@ int main(int argc, char* argv[])
 	}
 	//----------------------------------------------------------------------------
 	D_tot /= 2.0*NumOrient/M_PI;
-	const double NRM = 4.0*NumOrient;
+    const double NRM = 1.0*NumOrient;
 	ofstream M("M.dat", ios::out), out("out.dat", ios::out);
 	M << text2;
 	for(int j=ThetaNumber;j>=0;j--) {
@@ -235,7 +238,9 @@ int main(int argc, char* argv[])
 		if(bf[0][0] <= DBL_EPSILON)
 			M << " 0 0 0 0 0 0 0 0";
 		else
-			M<<' '<<bf[0][0]/(NRM*sn*D_tot)<<' '
+            //M<<' '<<bf[0][0]<<' '
+            M<<' '<<bf[0][0]/(NRM*sn*D_tot)*M_PI<<' '
+            <<' '<<bf[0][0]/(NRM*sn)<<' '
 			<<bf[0][1]/bf[0][0]<<' '<<bf[1][0]/bf[0][0]<<' '<<bf[1][1]/bf[0][0]<<' '
 			<<bf[2][2]/bf[0][0]<<' '<<bf[2][3]/bf[0][0]<<' '<<bf[3][2]/bf[0][0]<<' '<<bf[3][3]/bf[0][0];
 	}

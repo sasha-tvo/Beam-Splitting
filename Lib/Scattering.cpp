@@ -3,7 +3,8 @@
 #endif
 
 
-const double Eps1 = 1.7453292431333680334067268304459e-4; //cos(89.99)
+//const double Eps1 = 1.7453292431333680334067268304459e-4; //cos(89.99)
+const double Eps1 = 1.7453292519943295769148298069306e-10; //cos(89.99999999)
 const double Eps2 = 0.99999999998254670756866631966593; //1- cos(89.99999999)
 
 //==============================================================================
@@ -144,7 +145,7 @@ int Crystal::TracingOfInternalBeam ( Beam& inc_beam, unsigned int i, Hand Handle
 				}
 			} // end of if... else...
 		}
-		if(CrossSection(Reflected) < S_eps) continue;
+        //if(CrossSection(Reflected) < S_eps) continue;
 		// treating of the internal field
 		this->TracingOfInternalBeam(Reflected, l, Handler);
 	} // end of loop

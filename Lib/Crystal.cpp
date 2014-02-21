@@ -153,7 +153,7 @@ bool Crystal::Intersection
 		throw "Crystal::Intersection : Error!";
 	} 
 	#endif
-	if(FastPolygonIntersect(beam, facet, intersection)) {
+    if(FastPolygonIntersect(beam, facet, intersection)) {
 		#ifdef _DEBUG
 		if(!CheckPolygon(intersection)) {
 			OutPolyg("Errors.log", "beam", beam);
@@ -163,7 +163,7 @@ bool Crystal::Intersection
 		} 
 		#endif
 		const double e = AreaOfConvexPolygon(intersection);
-		if(e < 0.01) return false;
+        //if(e < S_eps) return false;
 		Result = this->Retrieve(intersection, i, fl);
 		//------------------------------------------------------------------------
 		return true;

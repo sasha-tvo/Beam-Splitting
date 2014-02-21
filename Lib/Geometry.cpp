@@ -576,7 +576,7 @@ bool  InclusionInsideTest(const Point2D &s, const Polyg &p)
 		const Edge& e = p.edge();
 		const Point2D de = e.dest - e.org,
 					  ds = s - e.org;
-		if(de.x*ds.y > de.y*ds.x+E_DBL) {
+        if(de.x*ds.y > de.y*ds.x+E_DBL) {
 			const_cast<Polyg&> (p).setV(org);
 			return false;
 		} 
@@ -592,7 +592,7 @@ bool  InclusionInsideTest(const Point2D &s, const Polyg &p)
 bool  FastPolygonIntersect(const Polyg &P, const Polyg& Q, Polyg& R)
 {
 	const     unsigned int  maxItns = 2*(P.size()+Q.size());
-	const     double   Eps = pow(0.1,10), E_Size = 0.005;
+    const     double   Eps = pow(0.1,10), E_Size = 0.005;
 	Point2D   iPnt,    startPnt;
 	crossing  inflag = UNKNOWN;
 	bool      phase = true;
