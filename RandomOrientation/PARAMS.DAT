@@ -1,0 +1,14 @@
+0     //0  the kind of the particle (0-prizm, 1-bullet, 2-pyramid, 3-tapered prizm, 4-cup)
+0     //1  tip angle of pyramid 56 degrees (1-yes, 0-no)
+40    //2  the prism radius
+100   //3  the prism semiheight
+0     //4  the radius of tip
+0     //5  the height of tip
+1.332 //6  the real part of refraction index
+0     //7  the imaginary part of refraction index
+10001    //8  full number of orientations for axial rotation angle, must be uneven 
+1   //9  full number of orientations for zenith angle
+180   //10 the size of the output array
+4     //11 the number of the internal reflections for every beam
+0     //12 extraction of the delta-function for backward and forward directions
+0     //
