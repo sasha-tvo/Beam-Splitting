@@ -162,6 +162,45 @@ SphCrd   Beam::Spherical(void) const
 }
 //------------------------------------------------------------------------------
 
+void Beam::SetCoefficients_abcd(Point3D& rv, Point3D& Tv, Point3D& Fv, Point3D& r0)
+{
+	const double E = 1e9*DBL_EPSILON;
+
+	Point3D cnt = Proj(Tv,Fv,rv,r0);
+
+	this->vpr.clear();
+
+	for(std::list<Point3D>::const_iterator p = this->v.begin(); p!=this->v.end(); p++)
+	{
+		Point3D pt = Proj(Tv,Fv,rv,*p)-cnt;
+		this->vpr.push_back(Point2D(pt.x,pt.y));
+	}
+
+	this->ab.clear();
+	this->cd.clear();
+
+	std::list<Point2D>::const_iterator pr = this->vpr.begin();
+	Point2D p1 = *pr++, p2;
+
+	for(unsigned int  i=1, imax=this->vpr.size(); i<=imax; i++)
+	{
+		p2 = (i!=imax?*pr++:this->vpr.front());
+		if(fabs(p1.x-p2.x)>E)
+		{
+			double ai = (p1.y-p2.y)/(p1.x-p2.x), bi = p1.y - ai*p1.x;
+			this->ab.push_back(Point2D(ai,bi));
+		}
+		if(fabs(p1.y-p2.y)>E)
+		{
+			double ci = (p1.x-p2.x)/(p1.y-p2.y), di = p1.x - ci*p1.y;
+			this->cd.push_back(Point2D(ci,di));
+		}
+		p1 = p2;
+	}
+
+}
+//------------------------------------------------------------------------------
+
 Beam  Beam::RotatePlane(const Point3D& NewE)   {
 	Beam res = *this;
 	Rot(res.e, NewE, res.r, res.mt);

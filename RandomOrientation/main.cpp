@@ -15,7 +15,7 @@
 #include "..\Lib\Geometry.hpp"
 #include "..\Lib\particle.hpp"
 #include "..\Lib\PhysMtr.hpp"
-#include "..\Lib\Prizm\Mueller.hpp"
+#include "..\Lib\Mueller.hpp"
 //#include "..\Lib\ConsoleBackward.hpp"
 #include "..\Lib\trajectory.hpp"
 
