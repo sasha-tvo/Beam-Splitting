@@ -83,6 +83,10 @@ public:
 	std::list<unsigned int>::const_iterator  EndP(void) const
 		{ return this->path.end(); }
 
+	complex    DiffractionShifted(const Point3D& pt, double lam) const; ///< Colculate diffraction at the point /b pt
+	complex    DiffractionShiftedPr(const Point3D& pt, double lam) const; ///< Colculate diffraction at the point /b pt, faster then DiffractionShifted in some cases. Needs SetCoefficients_abcd to be called first.
+	complex    DiffractionIncline(const Point3D& pt, double lam) const; ///< Colculate diffraction at the point /b pt
+	complex    DiffractionInclinePr(const Point3D& pt, double lam) const; ///< Colculate diffraction at the point /b pt, faster then DiffractionIncline in some cases. Needs SetCoefficients_abcd to be called first.
 	Polyg     Projection(const double * const, int) const;
 	Beam&     Rotate(Point3D k, Point3D Ey);  ///< Rotate Jones matrix of the beam to basis of scattering plane
 	Beam      RotatePlane(const Point3D & NewE); ///< Rotate Jones matrix to new basis
