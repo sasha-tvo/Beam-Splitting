@@ -5,10 +5,10 @@
 0     //4  the radius of tip
 0     //5  the height of tip
 1.3   //6  the real part of refraction index
-20    //7  cone (in deg)
+20    //7  size of backscattering vicinity (in deg, must be <90)
 61    //8  full number of orientations for axial rotation angle, must be uneven 
 180   //9  full number of orientations for zenith angle
-1.064 //10 длина волны
+1.064 //10 the wavelength
 10    //11 the number of the internal reflections for every beam
-0     //12 0 - только суммируем, 1 - выводим всю матрицу
+0     //12 flag, 0 - histogram of enery, 1 - 2D pattern of energy and number of ring
 0     //13 the number of trajectories(0 - all)
