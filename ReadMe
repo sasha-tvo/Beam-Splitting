@@ -1,2 +1,10 @@
 Physical optics approximation development branch
-.(Natasha)
+
+Program for an approximate estimate of the contribution of different trajectories of beams
+in the backscattering direction, which are scattered in a certain neighborhood backscattering
+direction for randomly oriented particles.
+
+
+ѕрограмма дл€ приближенной оценки вклада различных траекторий пучков в направление рассе€ни€
+назад, которые рассеиваютс€ в некоторой окрестности направлени€ рассе€ни€ назад дл€ хаотически
+ориентированных частиц.
