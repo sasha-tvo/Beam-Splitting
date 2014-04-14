@@ -37,14 +37,15 @@ class BeamSplitting{
 	void FreeMem(void);
 protected:
 	unsigned int 	Itr, ///<Number of internal reflection
-					NoF, ///<Number of facets
-					**Facets; ///<Mask for calculation only specified trajectories 
+					NoF; ///<Number of facets
+
 	Point3D k,  ///< Direction to the incident wave
 			Ey; ///< Normal to the incident plane
     double Ep, ///< the level of negligibility energy
             d, ///< distance to far zone
             S_eps;	///<Minimal area of a beam
 public:
+	unsigned int **Facets; ///<Mask for calculation only specified trajectories
 	BeamSplitting(unsigned int _Itr, unsigned int _NoF, Point3D _k, Point3D _Ey) :
         Itr(_Itr), NoF(_NoF), k(_k), Ey(_Ey), Ep(2e-12), d(10000.0), S_eps(0.01)
 		{ this->AllocMem();};
