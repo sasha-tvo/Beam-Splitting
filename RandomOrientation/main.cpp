@@ -58,7 +58,7 @@ void Handler(Beam& bm);
 int ReadFile(char* name, double* params, unsigned int n);
 
 /// Fill in the \b mask and \b **Face from data file 
-void MaskAppend(char s[], unsigned int n);
+void MaskAppend(char s[]);
 
 /// Shows the title
 void ShowTitle(void);
@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
 	TipRadius =		params[4];
 	TipHeight =		params[5];
 	_RefI =			complex(params[6],0.0);
-	cos_angle =		cos(params[7]*M_PI/180.0);
+	cos_angle =		cos(M_PI/2.0-params[7]*M_PI/180.0);
 	GammaNumber =	params[8];
 	BettaNumber =	params[9];
 	lm =			params[10];
@@ -170,7 +170,8 @@ int main(int argc, char* argv[])
 	//----------------------------------------------------------------------------
 	QTime time = QTime::currentTime();
 	QString str = time.toString("hh_mm_ss");
-	cout << "\nNumerical calculations started at: " << (time.toString("hh:mm:ss")).toStdString();
+	string time_start = "\nNumerical calculations started at: "+(time.toString("hh:mm:ss")).toStdString();
+	cout << time_start;
 	clock_t t = clock();
 
 	//----------------------------------------------------------------------------
@@ -180,6 +181,9 @@ int main(int argc, char* argv[])
 	QDir::setCurrent(dir.absolutePath());
 
 	double s = 0, betta, gamma;
+	ofstream f("log.dat", ios::out);
+	f << time_start;
+	f.close();
 	try
 	{
 		for(betta_i=0; betta_i<BettaNumber; betta_i++)
@@ -264,8 +268,13 @@ int main(int argc, char* argv[])
 	}
 	//--------------------------------------------------------------------------
 	delete Body;
-	t = clock()-t;
-	cout << "\nTotal time of calculation = " << t/CLK_TCK << " seconds";
+	t = (clock()-t)/CLK_TCK;
+
+	ofstream g("log.dat", ios::app);
+	g << "\nTotal time of calculation = " << t << " seconds";
+	g.close();
+
+	cout << "\nTotal time of calculation = " << t << " seconds";
 	cout << "\nAll done. Please, press any key.";
 	return 0;
 }
@@ -297,71 +306,69 @@ void Handler(Beam& bm)
 	}
 
 	if((bm.r*k)<cos_angle)
+		return;
+	matrix m = Mueller(bm());
+
+	unsigned int nst = 0; // номер в списке
+	list<Chain>::const_iterator c = Lbm.begin();
+	for(; c!=Lbm.end(); c++, nst++)
 	{
-		matrix m = Mueller(bm());
-
-		unsigned int nst = 0; // номер в списке
-		list<Chain>::const_iterator c = Lbm.begin();
-		for(; c!=Lbm.end(); c++, nst++)
-		{
-			list<unsigned int>::const_iterator it = c->Ch.begin(), fs = facets.begin();
-			if(SizeP(bm)!=c->Ch.size())
-				continue;
-			for(; it!=c->Ch.end() && (*it)==(*fs); it++, fs++);
-			if(it==c->Ch.end())
-				break;
-		}
-		if(c==Lbm.end())
-		{
-			Lbm.push_back(facets);
-			if(F_Mt)
-			{
-				matrix temp(BettaNumber, GammaNumber);
-				temp.Fill(0.0);
-				nc.push_back(temp);
-				dif.push_back(temp);
-			}
-			else
-				en.push_back(0.0);
-		}
-
-		std::list<Point3D>::const_iterator pt = bm.Begin();
-		Point3D rn = k,
-				rn_pr = rn-bm.r*(bm.r*rn),		// проекци€ на плоскость перпендикул€рную пучку.
-				cur = (*pt)-bm.r*(bm.r*(*pt));	// проецируем первую вершину на плоскость перпендикул€рную пучку,
-
-		double	curr = cur*rn_pr,				// вычисл€ем скол€рное произведение проекции нормали и проекции точки
-				min_ro_n = curr,
-				max_ro_n = curr;				// полагаем максимуму и минимум равным первому рассто€нию
-
-		for(pt++; pt!=bm.End(); pt++)
-		{
-			Point3D cur=(*pt)-bm.r*(bm.r*(*pt));	// проецируем вершину на плоскость перпендикул€рную пучку,
-			double curr=cur*rn_pr;					// вычисл€ем скал€рное произведение проекции нормали и проекции точки
-			if(curr>max_ro_n)
-				max_ro_n=curr;
-			if(curr<min_ro_n)
-				min_ro_n=curr;
-		}
-		max_ro_n = max_ro_n-min_ro_n;
-		double	NumberOfRing = max_ro_n/lm,
-				area = AreaOfBeam(bm),
-				x = M_PI*NumberOfRing,
-				fn = m[0][0]*SQR(area)/lm/lm;
-
-		if(x>2.2)
-			fn *= 2.6/x/x/x;
-		else
-			fn *= 0.0688734*x*x*x-0.3142876*x*x+0.0192811*x+0.9998942;
-
+		list<unsigned int>::const_iterator it = c->Ch.begin(), fs = facets.begin();
+		if(SizeP(bm)!=c->Ch.size())
+			continue;
+		for(; it!=c->Ch.end() && (*it)==(*fs); it++, fs++);
+		if(it==c->Ch.end())
+			break;
+	}
+	if(c==Lbm.end())
+	{
+		Lbm.push_back(facets);
 		if(F_Mt)
 		{
-			(nc[nst])[betta_i][gamma_j] = NumberOfRing;
-			(dif[nst])[betta_i][gamma_j] = fn*P;
+			matrix temp(BettaNumber, GammaNumber);
+			temp.Fill(0.0);
+			nc.push_back(temp);
+			dif.push_back(temp);
 		}
 		else
-			en[nst] += fn*P;
+			en.push_back(0.0);
 	}
+
+	std::list<Point3D>::const_iterator pt = bm.Begin();
+	Point3D rn = k,
+			rn_pr = rn-bm.r*(bm.r*rn),		// проекци€ на плоскость перпендикул€рную пучку.
+			cur = (*pt)-bm.r*(bm.r*(*pt));	// проецируем первую вершину на плоскость перпендикул€рную пучку,
+
+	double	curr = cur*rn_pr,				// вычисл€ем скол€рное произведение проекции нормали и проекции точки
+			min_ro_n = curr,
+			max_ro_n = curr;				// полагаем максимуму и минимум равным первому рассто€нию
+
+	for(pt++; pt!=bm.End(); pt++)
+	{
+		Point3D cur=(*pt)-bm.r*(bm.r*(*pt));	// проецируем вершину на плоскость перпендикул€рную пучку,
+		double curr=cur*rn_pr;					// вычисл€ем скал€рное произведение проекции нормали и проекции точки
+		if(curr>max_ro_n)
+			max_ro_n=curr;
+		if(curr<min_ro_n)
+			min_ro_n=curr;
+	}
+	max_ro_n = max_ro_n-min_ro_n;
+	double	NumberOfRing = max_ro_n/lm,
+			area = CrossSection(bm),
+			x = M_PI*NumberOfRing,
+			fn = m[0][0]*SQR(area)/lm/lm;
+
+	if(x>2.2)
+		fn *= 2.6/x/x/x;
+	else
+		fn *= 0.0688734*x*x*x-0.3142876*x*x+0.0192811*x+0.9998942;
+	if(F_Mt)
+	{
+		(nc[nst])[betta_i][gamma_j] = NumberOfRing;
+		(dif[nst])[betta_i][gamma_j] = fn*P;
+	}
+	else
+		en[nst] += fn*P;
 }
 //==============================================================================
 
@@ -414,7 +421,7 @@ int ReadFile(char* name, double* params, unsigned int n)
 				if(in.eof())
 					return 1;
 				in.getline(buf, size);
-				MaskAppend(buf,size);
+				MaskAppend(buf);
 			}
 		}
 	}
@@ -424,7 +431,7 @@ int ReadFile(char* name, double* params, unsigned int n)
 //==============================================================================
 
 
-void MaskAppend(char s[], unsigned int n)
+void MaskAppend(char s[])
 {
 	list<unsigned int> ch;
 	unsigned int intern_numb = 0;
