@@ -189,6 +189,22 @@ public:
 	Point3D  RotateEuler(double, double, double);
 	bool     operator==(const Point3D& a) const
 		{ return (fabs(this->x-a.x)<=1e+2*DBL_EPSILON) && (fabs(this->y-a.y)<=1e+2*DBL_EPSILON) && (fabs(this->z-a.z)<=1e+2*DBL_EPSILON); }
+	friend Point3D   Proj(const Point3D& Tx, const Point3D& Ty,
+								   const Point3D& r,  const Point3D& pnt)
+	 {
+	  const  Point3D p_pr = pnt-r*(r*pnt); // расчёт коор-т в СК наблюдателя
+	  return Point3D(p_pr*Tx, p_pr*Ty, 0); //*/
+	 }
+	friend Point3D   Proj(const Point3D& _r, const Point3D &pnt)
+	 {
+	  Point3D _Tx,  // условная горизонталь СК экрана в СК тела
+			  _Ty;  // третья ось (условная вертикаль СК экрана)
+	  const double tmp = sqrt(SQR(_r.x)+SQR(_r.y));
+	  (fabs(_r.z)>1-DBL_EPSILON) ?
+		 (_Tx=Point3D(0,-_r.z,0), _Ty=Point3D(1,0,0)) :
+		 (_Tx=Point3D(_r.y/tmp,-_r.x/tmp,0), _Ty=_r%_Tx);
+	  return Proj(_Tx, _Ty, _r, pnt);
+	 }
 	bool     operator!=(const Point3D& a) const { return !(*this==a); }
 	friend Point3D  operator*(const Point3D& a, const matrix &m); 
 	friend Point3D  operator*(double x, const Point3D& a)

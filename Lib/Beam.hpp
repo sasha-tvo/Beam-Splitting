@@ -21,6 +21,10 @@
 
 /** 
 @brief The Beam class consist of 3D polygon, propagation direction and it's history, Jones matrix and so on.
+
+The diffraction calculation equations are from C. Heffels. On-line particle size and shape characterization by narrow angle light scattering.
+Delft University of Technology, 1995
+ISBN 90-407-1181-X
 */
 class Beam {
 private:
@@ -29,6 +33,8 @@ public:
 	std::list<Point3D> v;   ///< The beam's vertexes
 	std::list<unsigned int> path; ///<beam's trajectory
 	std::list<Point2D> vpr;  ///< Projection of the beam's vertexes on the normal plane 
+	std::list<Point2D> ab; ///< Coefficients for diffraction calculation. ab.x - ai, ab.y - bi in Eq 3.9 in Heffels
+	std::list<Point2D> cd; ///< Coefficients for diffraction calculation. cd.x - ci, cd.y - di in Eq 3.9 in Heffels
 
 	double	lng,           ///< optical path of the beam
 			D;             ///< current position of phase front from Ax+By+Cz+D=0
@@ -48,6 +54,8 @@ public:
 		this->v.clear();	this->v = b.v;
 		this->vpr.clear();	this->vpr = b.vpr;
 		this->path.clear();	this->path = b.path;
+		this->ab.clear();	this->ab = b.ab;
+		this->cd.clear();	this->cd = b.cd;
 		this->lng = b.lng;
 		this->D = b.D;
 		this->e = b.e;
@@ -75,6 +83,10 @@ public:
 	std::list<unsigned int>::const_iterator  EndP(void) const
 		{ return this->path.end(); }
 
+	complex    DiffractionShifted(const Point3D& pt, double lam) const; ///< Colculate diffraction at the point /b pt
+	complex    DiffractionShiftedPr(const Point3D& pt, double lam) const; ///< Colculate diffraction at the point /b pt, faster then DiffractionShifted in some cases. Needs SetCoefficients_abcd to be called first.
+	complex    DiffractionIncline(const Point3D& pt, double lam) const; ///< Colculate diffraction at the point /b pt
+	complex    DiffractionInclinePr(const Point3D& pt, double lam) const; ///< Colculate diffraction at the point /b pt, faster then DiffractionIncline in some cases. Needs SetCoefficients_abcd to be called first.
 	Polyg     Projection(const double * const, int) const;
 	Beam&     Rotate(Point3D k, Point3D Ey);  ///< Rotate Jones matrix of the beam to basis of scattering plane
 	Beam      RotatePlane(const Point3D & NewE); ///< Rotate Jones matrix to new basis
@@ -85,6 +97,7 @@ public:
 	void      PushFrontP(const int& f) { this->path.push_front(f); }
 	void      PushBackP(const int& f)  { this->path.push_back(f); }	
 	SphCrd    Spherical(void) const;
+	void      SetCoefficients_abcd(Point3D&,Point3D&,Point3D&,Point3D&); ///< Calculates ai,bi,ci,di for diffraction calculation with Diffraction_xxxxPr
 	// friends
 	friend unsigned int  Size(const Beam& b)  { return b.v.size(); }
 	friend unsigned int  SizeP(const Beam& b) { return b.path.size(); }

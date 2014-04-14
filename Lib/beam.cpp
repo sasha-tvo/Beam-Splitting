@@ -162,6 +162,249 @@ SphCrd   Beam::Spherical(void) const
 }
 //------------------------------------------------------------------------------
 
+void Beam::SetCoefficients_abcd(Point3D& rv, Point3D& Tv, Point3D& Fv, Point3D& r0)
+{
+	const double E = 1e9*DBL_EPSILON;
+
+	Point3D cnt = Proj(Tv,Fv,rv,r0);
+
+	this->vpr.clear();
+
+	for(std::list<Point3D>::const_iterator p = this->v.begin(); p!=this->v.end(); p++)
+	{
+		Point3D pt = Proj(Tv,Fv,rv,*p)-cnt;
+		this->vpr.push_back(Point2D(pt.x,pt.y));
+	}
+
+	this->ab.clear();
+	this->cd.clear();
+
+	std::list<Point2D>::const_iterator pr = this->vpr.begin();
+	Point2D p1 = *pr++, p2;
+
+	for(unsigned int  i=1, imax=this->vpr.size(); i<=imax; i++)
+	{
+		p2 = (i!=imax?*pr++:this->vpr.front());
+		if(fabs(p1.x-p2.x)>E)
+		{
+			double ai = (p1.y-p2.y)/(p1.x-p2.x), bi = p1.y - ai*p1.x;
+			this->ab.push_back(Point2D(ai,bi));
+		}
+		else
+			this->ab.push_back(Point2D(0,0));
+		if(fabs(p1.y-p2.y)>E)
+		{
+			double ci = (p1.x-p2.x)/(p1.y-p2.y), di = p1.x - ci*p1.y;
+			this->cd.push_back(Point2D(ci,di));
+		}
+		else
+			this->cd.push_back(Point2D(0,0));
+		p1 = p2;
+	}
+
+}
+//------------------------------------------------------------------------------
+
+complex   Beam::DiffractionInclinePr(const Point3D& pt, double lam) const
+ {
+  const double E = 1e9*DBL_EPSILON, E2 = 1e6*DBL_EPSILON; //eps for circle of exactly backscattering
+
+  Point3D pt_proj = Proj(this->N,-pt+this->r);
+  const double A = pt_proj.x, B = pt_proj.y;
+  complex one(0,-1);
+  const double k = m_2pi/lam;
+  if(fabs(A)<E2 && fabs(B)<E2) return -one/lam*AreaOfBeam(*this);
+
+  complex s(0,0);
+  std::list<Point2D>::const_iterator p = this->vpr.begin();
+  Point2D p1 = *p++, p2;
+
+  if(fabs(B)>fabs(A)) {
+	std::list<Point2D>::const_iterator ab = this->ab.begin();
+	for(unsigned int  i=1, imax=this->vpr.size(); i<=imax; i++) {
+	  p2 = (i!=imax?*p++:this->vpr.front());
+	  if(fabs(p1.x-p2.x)<E) {ab++; p1 = p2; continue; }
+	  const double ai = (*ab).x,
+				   bi = (*ab).y,
+				   Ci = A+ai*B;
+	  ab++;
+	  s += exp_im(k*B*bi)*
+			  (fabs(Ci)<E ? complex(-k*k*Ci*(p2.x*p2.x-p1.x*p1.x)/2.0,k*(p2.x-p1.x)) :
+							(exp_im(k*Ci*p2.x) - exp_im(k*Ci*p1.x))/Ci);
+	  p1 = p2;
+	 }
+	s /= B;
+   }
+  else {
+	std::list<Point2D>::const_iterator cd = this->cd.begin();
+	for(unsigned int  i=1, imax=this->vpr.size(); i<=imax; i++) {
+	  p2 = (i!=imax?*p++:this->vpr.front());
+	  if(fabs(p1.y-p2.y)<E) {cd++; p1 = p2; continue; }
+	  const double ci = (*cd).x,
+				   di = (*cd).y,
+				   Ei = A*ci+B;
+	  cd++;
+	  s += exp_im(k*A*di) *
+		   (fabs(Ei)<E ? complex(-k*k*Ei*(p2.y*p2.y-p1.y*p1.y)/2.0,k*(p2.y-p1.y)) :
+						 (exp_im(k*Ei*p2.y) - exp_im(k*Ei*p1.y))/Ei);
+	  p1 = p2;
+	 }
+	s /= -A;
+   }
+  return one*lam*s/SQR(m_2pi);
+ }
+//------------------------------------------------------------------------------
+
+complex   Beam::DiffractionShiftedPr(const Point3D& pt, double lam) const
+ {
+  const double E = 1e9*DBL_EPSILON, E2 = 1e6*DBL_EPSILON; //eps for circle of exactly backscattering
+
+  Point3D pt_proj = Proj(this->T,this->F,this->r, pt);
+  const double A = pt_proj.x, B = pt_proj.y;
+  complex one(0,-1);
+  const double k = m_2pi/lam;
+  if(fabs(A)<E2 && fabs(B)<E2) return -one/lam*CrossSection(*this); // ????
+
+  complex s(0,0);
+  std::list<Point2D>::const_iterator p = this->vpr.begin();
+  Point2D p1 = *p++, p2;
+
+  if(fabs(B)>fabs(A)) {
+	std::list<Point2D>::const_iterator ab = this->ab.begin();
+	for(unsigned int  i=1, imax=this->vpr.size(); i<=imax; i++) {
+	  p2 = (i!=imax?*p++:this->vpr.front());
+	  if(fabs(p1.x-p2.x)<E) {ab++; p1 = p2; continue; }
+	  const double ai = (*ab).x,
+				   bi = (*ab).y,
+				   Ci = A+ai*B;
+	  ab++;
+	  s += exp_im(k*B*bi)*
+			  (fabs(Ci)<E ? complex(-k*k*Ci*(p2.x*p2.x-p1.x*p1.x)/2.0,k*(p2.x-p1.x)) :
+							(exp_im(k*Ci*p2.x) - exp_im(k*Ci*p1.x))/Ci);
+	  p1 = p2;
+	 }
+	s /= B;
+   }
+  else {
+	std::list<Point2D>::const_iterator cd = this->cd.begin();
+	for(unsigned int  i=1, imax=this->vpr.size(); i<=imax; i++) {
+	  p2 = (i!=imax?*p++:this->vpr.front());
+	  if(fabs(p1.y-p2.y)<E) {cd++; p1 = p2; continue; }
+	  const double ci = (*cd).x,
+				   di = (*cd).y,
+				   Ei = A*ci+B;
+	  cd++;
+	  s += exp_im(k*A*di) *
+		   (fabs(Ei)<E ? complex(-k*k*Ei*(p2.y*p2.y-p1.y*p1.y)/2.0,k*(p2.y-p1.y)) :
+						 (exp_im(k*Ei*p2.y) - exp_im(k*Ei*p1.y))/Ei);
+	  p1 = p2;
+	 }
+	s /= -A;
+   }
+  return one*lam*s/SQR(m_2pi);
+ }
+//------------------------------------------------------------------------------
+
+complex   Beam::DiffractionShifted(const Point3D& pt, double lam) const
+ {
+  const double E = 1e9*DBL_EPSILON, E2 = 1e6*DBL_EPSILON; //eps for circle of exactly backscattering
+
+  Point3D r0 = CenterOfBeam(*this),
+		  cnt = Proj(this->T,this->F,this->r,r0),
+		  pt_proj = Proj(this->T,this->F,this->r, pt);
+  const double A = pt_proj.x, B = pt_proj.y;
+  //cnt = Point3D(0,0,0);
+  complex one(0,-1);
+  const double k = m_2pi/lam;
+  if(fabs(A)<E2 && fabs(B)<E2) return -one/lam*CrossSection(*this); // ????
+
+  complex s(0,0);
+  std::list<Point3D>::const_iterator p = this->v.begin();
+  Point3D p1 = Proj(this->T,this->F,this->r, *p++)-cnt, p2;
+
+  if(fabs(B)>fabs(A)) {
+	for(unsigned int  i=1; i<=this->v.size(); i++) {
+	  p2 = Proj(this->T,this->F,this->r, (i!=this->v.size()?*p++:this->v.front()))-cnt;
+	  if(fabs(p1.x-p2.x)<E) { p1 = p2; continue; }
+	  const double ai = (p1.y-p2.y)/(p1.x-p2.x),
+				   bi = p1.y - ai*p1.x,
+				   Ci = A+ai*B;
+	  s += exp_im(k*B*bi)*
+			  (fabs(Ci)<E ? complex(-k*k*Ci*(p2.x*p2.x-p1.x*p1.x)/2.0,k*(p2.x-p1.x)) :
+							(exp_im(k*Ci*p2.x) - exp_im(k*Ci*p1.x))/Ci);
+	  p1 = p2;
+	 }
+	s /= B;
+   }
+  else {
+	for(unsigned int  i=1; i<=this->v.size(); i++) {
+	  p2 = Proj(this->T,this->F,this->r, (i!=this->v.size()?*p++:this->v.front()))-cnt;
+	  if(fabs(p1.y-p2.y)<E) { p1 = p2; continue; }
+	  const double ci = (p1.x-p2.x)/(p1.y-p2.y),
+				   di = p1.x - ci*p1.y,
+				   Ei = A*ci+B;
+
+		s += exp_im(k*A*di) *
+			 (fabs(Ei)<E ? complex(-k*k*Ei*(p2.y*p2.y-p1.y*p1.y)/2.0,k*(p2.y-p1.y)) :
+						   (exp_im(k*Ei*p2.y) - exp_im(k*Ei*p1.y))/Ei);
+	  p1 = p2;
+	 }
+	s /= -A;
+   }
+  return one*lam*s/SQR(m_2pi);
+ }
+//==============================================================================
+
+complex   Beam::DiffractionIncline(const Point3D& pt, double lam) const
+ {
+  const double E = 1e9*DBL_EPSILON, E2 = 1e6*DBL_EPSILON;
+  Point3D k_k0=-pt+this->r;
+  Point3D r0 = CenterOfBeam(*this),
+		  pt_proj = Proj(this->N, k_k0), cnt = Proj(this->N, r0);
+
+  const double A = pt_proj.x, B = pt_proj.y;
+  complex one(0,-1);
+  const double k = m_2pi/lam;
+  if(fabs(A)<E2 && fabs(B)<E2) return  -one/lam*AreaOfBeam(*this);
+
+  complex s(0,0);
+
+  std::list<Point3D>::const_iterator p = this->v.begin();
+  Point3D p1 = Proj(this->N, *p++)-cnt, p2; //переводим вершины в систему координат грани
+
+  if(fabs(B)>fabs(A)) {
+	for(unsigned int  i=1; i<=this->v.size(); i++) {
+	  p2 = Proj(this->N, (i!=this->v.size()?*p++:this->v.front()))-cnt;
+	  if(fabs(p1.x-p2.x)<E) { p1 = p2; continue; }
+	  const double ai = (p1.y-p2.y)/(p1.x-p2.x),
+				   bi = p1.y - ai*p1.x,
+				   Ci = A+ai*B;
+	  s += exp_im(k*B*bi)*
+			  (fabs(Ci)<E ? complex(-k*k*Ci*(p2.x*p2.x-p1.x*p1.x)/2.0,k*(p2.x-p1.x)) :
+							(exp_im(k*Ci*p2.x) - exp_im(k*Ci*p1.x))/Ci);
+	  p1 = p2;
+	 }
+	s /= B;
+   }
+  else {
+	for(unsigned int  i=1; i<=this->v.size(); i++) {
+	  p2 = Proj(this->N, (i!=this->v.size()?*p++:this->v.front()))-cnt;
+	  if(fabs(p1.y-p2.y)<E) { p1 = p2; continue; }
+	  const double ci = (p1.x-p2.x)/(p1.y-p2.y),
+				   di = p1.x - ci*p1.y,
+				   Ei = A*ci+B;
+
+		s += exp_im(k*A*di) *
+			 (fabs(Ei)<E ? complex(-k*k*Ei*(p2.y*p2.y-p1.y*p1.y)/2.0,k*(p2.y-p1.y)) :
+						   (exp_im(k*Ei*p2.y) - exp_im(k*Ei*p1.y))/Ei);
+	  p1 = p2;
+	 }
+	s /= -A;
+   }
+  return one*lam*s/SQR(m_2pi);
+ }
+//------------------------------------------------------------------------------
+
 Beam  Beam::RotatePlane(const Point3D& NewE)   {
 	Beam res = *this;
 	Rot(res.e, NewE, res.r, res.mt);
