@@ -14,12 +14,12 @@
 #include "..\Lib\PhysMtr.hpp"
 #include "..\Lib\Mueller.hpp"
 #include "..\Lib\particle.hpp"
-typedef unsigned int uint;
+typedef uint uint;
 
 using namespace std;
 //==============================================================================
 Crystal* Body = NULL;						///< Crystal particle
-unsigned int 	KoP,						///< Kind of particle
+uint			KoP,						///< Kind of particle
 				AoP56,						///< Flag, 1 means angle of tip 56 deg, 0 means sizes of tip defined in data file
 				ThetaNumber,				///< Total number of steps by Theta in output file
 				PhiNumber,					///< Total number of steps by Phi in output file
@@ -28,7 +28,7 @@ unsigned int 	KoP,						///< Kind of particle
 int				GammaNumber,				///< Number of steps for Gamma rotation
 				BettaNumber;				///< Number of steps for Betta rotation
 complex 		_RefI(0,0);					///< Refraction index
-unsigned int 	NumberOfTrajectory=0,		///< NumberOfTrajectory = 0 if all trajectories are taking into account, otherwise NumberOfTrajectory is equal to number of trajectories to calculate
+uint			NumberOfTrajectory=0,		///< NumberOfTrajectory = 0 if all trajectories are taking into account, otherwise NumberOfTrajectory is equal to number of trajectories to calculate
 				_NoF,						///< Number of facets of the crystal
 				**Face;						///< An array for masking the trajectories which are out of interest
 double			Radius,						///< Radius of the particle
@@ -50,28 +50,31 @@ list<Chain>		mask;						///< List of trajectories to take into account
 list<Chain>		AllowedMask;				///< Mask of allowed trajectories, noly this trajectories can be in mask
 Point3D			k(0,0,1),					///< Direction on incident wave
 				Ey(0,1,0);					///< Basis for polarization characteristic of light
-bool			perpend_diff;				///< if true - diffraction will be calculated with Shifted screen, perpendicular to propagation direction; if false - diffraction will be calculated with incline screen
+bool			perpend_diff;				///< If true - diffraction will be calculated with Shifted screen, perpendicular to propagation direction; if false - diffraction will be calculated with incline screen
 //==============================================================================
-const uint	NumberOfParameters = 16;	///< Number of lines in data files, except trajectories
-double			params[NumberOfParameters];	///< array of input data
-double			NormGammaAngle = 	0,		///< Normalize coefficient for Gamma
-				NormBettaAngle =  	0;		///< Normalize coefficient for Betta
-double			Rad = M_PI/180., df = 0.0, dt = 0.0, area_min;
+const uint		NumberOfParameters = 16;		///< Number of lines in data files, except trajectories
+double			params[NumberOfParameters];		///< Array of input data
+double			NormGammaAngle = 	0,			///< Normalize coefficient for Gamma
+				NormBettaAngle =  	0;			///< Normalize coefficient for Betta
+const double	Rad = M_PI/180.;				///< Grad to Rad coefficient
+double			df = 0.0,						///< dPhi
+				dt = 0.0;						///< dTheta
+const uint		AllowedTrajectoryNumber = 28,	///< Number of trajectories that can be calculated
+				AllowedMullerMatrixNumber = 16;	///< Maximal allowed number of muller matrixes
 
-
-
-const unsigned int  NumTr = 28,  // число траекторий в фиксированном списке
-			  NumSum = 16; // макс число матриц Мюллера на выходе программы
-const string tr_beams[NumTr] = {"0", "0 7 0", "3", "3 6 3", "2 6 7 4", "2 7 6 4", "4 6 7 2", "4 7 6 2", "3 6 7 3", "3 7 6 3", "0 6 7 0",
-									"0 7 6 0", "3 7 0 6 7 3", "3 7 6 0 7 3", "0 6 3 7 6 0", "0 6 7 3 6 0", "2 6 7 3", "2 7 6 3", "4 6 7 3",
-									"4 7 6 3", "2 1 6 7 4", "4 7 6 1 2", "2 7 6 5 4", "4 5 6 7 2", "2 7 0 6 7 4", "2 7 6 0 7 4", "4 7 0 6 7 2", "4 7 6 0 7 2"};
-int maska[NumSum]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-uint	n_tr, // номер траектории, для которой вычисляется gamma_lim
-		Lim;  // номер текущей области из массива sort_lim
-double NumberOfRing, // номер дифракционного кольца для пучка с номером n_tr
-	   bm_tetta,     // tetta_координата для пучка с номером n_tr
-	   lim[NumSum]={-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0}, sort_lim[NumSum];
-vector<Arr2DC> j_tmp;
+/// The list of trajectories that can be calculated
+const string	allowed_beams_mask[AllowedTrajectoryNumber]
+												= {"0", "0 7 0", "3", "3 6 3", "2 6 7 4", "2 7 6 4", "4 6 7 2", "4 7 6 2", "3 6 7 3", "3 7 6 3", "0 6 7 0",
+												"0 7 6 0", "3 7 0 6 7 3", "3 7 6 0 7 3", "0 6 3 7 6 0", "0 6 7 3 6 0", "2 6 7 3", "2 7 6 3", "4 6 7 3",
+												"4 7 6 3", "2 1 6 7 4", "4 7 6 1 2", "2 7 6 5 4", "4 5 6 7 2", "2 7 0 6 7 4", "2 7 6 0 7 4", "4 7 0 6 7 2", "4 7 6 0 7 2"};
+/// The mask of allowed muller matrixes
+int				Muller_mask[AllowedMullerMatrixNumber]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+uint			n_tr,							// номер траектории, для которой вычисляется gamma_lim
+				Lim;							// номер текущей области из массива sort_lim
+double			NumberOfRing,					// номер дифракционного кольца для пучка с номером n_tr
+				bm_tetta,						// tetta_координата для пучка с номером n_tr
+				lim[AllowedMullerMatrixNumber]={-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0}, sort_lim[AllowedMullerMatrixNumber];
+vector<Arr2DC>	Jones_temp;
 
 
 ///< handler for the emitted beams
@@ -81,52 +84,33 @@ void HandlerTemp(Beam& bm);
 //==============================================================================
 
 /// Reads the parameters from data file
-int ReadFile(char* name, double* params, unsigned int n);
+int ReadFile(char* name, double* params, uint n);
+
 /// Fill in the \b mask and \b **Face from data file
-void MaskAppend(char s[]);
+void MaskAppend(const char *s);
+
 /// Fill in the \b AllowedMask from list of trajectories we can take into account
-void AllowedMaskAppend(char s[]);
+void AllowedMaskAppend(const char *s);
 
 /// Shows the title
 void ShowTitle(void);
+
 /// Shows current time
 void ShowCurrentTime(void);
+
 /// Deletes \b **Face structure
 void DelFace(void);
-/// Find out the GammaLim for every trajectory we take into account
-unsigned int FillLim(double ConusRad, double betta, double sc_coef, char* name);
 
-//const int NumberOfParameters = 16;  // количество строк в файле "params.dat"
-//unsigned int  Itr, NumberOfTrajectory = 0, TypeOfOrientation = 0, TypeOfCalculation = 0, PhiNumber, ThetaNumber;
-//double Rad = M_PI/180., lm, df = 0.0, dt = 0.0, area_min;
-//list<Chain> mask;
-//Point3D k(0,0,1.0), Ey(0,1.0,0);
-//
-//list<Chain> AllowedMask;  //маска пучков
-//const unsigned int  NumTr = 28,  // число траекторий в фиксированном списке
-//              NumSum = 16; // макс число матриц Мюллера на выходе программы
-//const string tr_beams[NumTr] = {"0", "0 7 0", "3", "3 6 3", "2 6 7 4", "2 7 6 4", "4 6 7 2", "4 7 6 2", "3 6 7 3", "3 7 6 3", "0 6 7 0",
-//                                    "0 7 6 0", "3 7 0 6 7 3", "3 7 6 0 7 3", "0 6 3 7 6 0", "0 6 7 3 6 0", "2 6 7 3", "2 7 6 3", "4 6 7 3",
-//                                    "4 7 6 3", "2 1 6 7 4", "4 7 6 1 2", "2 7 6 5 4", "4 5 6 7 2", "2 7 0 6 7 4", "2 7 6 0 7 4", "4 7 0 6 7 2", "4 7 6 0 7 2"};
-//int maska[NumSum]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-//    n_tr, // номер траектории, для которой вычисляется gamma_lim
-//    Lim;  // номер текущей области из массива sort_lim
-//double EPS_MODIF,
-//       NumberOfRing, // номер дифракционного кольца для пучка с номером n_tr
-//       bm_tetta,     // tetta_координата для пучка с номером n_tr
-//       lim[NumSum]={-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0}, sort_lim[NumSum];
-//vector<Arr2DC> j_tmp;
-//bool perpend_diff;
+/// Find out the GammaLim for every trajectory we take into account
+uint FillLim(double ConusRad, double betta, double sc_coef, char* name);
 
 
 //---------------------------------------------------------------------------
 
-//#pragma argsused
 int main(int argc, char* argv[])
 {
 	srand (time(NULL));
 	QCoreApplication a(argc, argv);
-//	clock_t t = clock();
 	ShowTitle();
 	cout << "\nLoading settings... ";
 
@@ -136,18 +120,20 @@ int main(int argc, char* argv[])
 	dir.cd(QCurDir);
 	QDir::setCurrent(dir.absolutePath());
 
-	//double			params[NumberOfParameters];	///< array of input data
 	try
 	{
-		if(ReadFile((char*)"params.dat", params, NumberOfParameters)) {
+		if(ReadFile((char*)"params.dat", params, NumberOfParameters))
+		{
 			cout << "\nError! Incorrect input file. Press any key for exit.";
 			getch(); return 1;
 		}
 	}
-	catch(const char* s) {
+	catch(const char* s)
+	{
 		cout << endl << s << "\nPress any key.";
 		getch(); return 1;
 	}
+
 	KoP =					0; //Only hexagonal
 	AoP56 =					0; // No Tip
 	Halh_Height =			params[0]/2.0;
@@ -170,7 +156,7 @@ int main(int argc, char* argv[])
 		getch(); return 1;
 	}
 
-	cout << "Reading file... OK";
+	cout << "OK";
 	//----------------------------------------------------------------------------
 
 	#ifdef _Windows
@@ -178,7 +164,8 @@ int main(int argc, char* argv[])
 	#endif
 	clock_t tm = clock();
 
-	switch(KoP) { // choosing the kind of the particle
+	switch(KoP)
+	{ // choosing the kind of the particle
 		case 0: // the hexagonal prizm
 			Body= new Prism(_RefI, Radius, Halh_Height,Itr,k,Ey);
 			NormGammaAngle = 	M_PI/(3.0*GammaNumber);
@@ -189,24 +176,12 @@ int main(int argc, char* argv[])
 			return 1;
 	}
 	//----------------------------------------------------------------------------
-
 	Body->Phase() = true;
 
-
-
-	//int N_or = (BettaNumber+1)*(2*GammaNumber+1);
 	double 	gamma_cnt = M_PI/6.0, dbetta = 0.0, dgamma = 1.0, ConusRad = ConusGrad*Rad;//, Tgamma;
-
-	if(BettaNumber) dbetta = (betta_max_Rad-betta_min_Rad)/BettaNumber;
-
-
-	//EPS_MODIF = pow(0.1,params[10]);
-
-
-
-	if(ThetaNumber) dt = ConusRad/(double)ThetaNumber;
-	if(PhiNumber) df = m_2pi/(double)(PhiNumber+1);
-
+	if (BettaNumber) dbetta = (betta_max_Rad-betta_min_Rad)/BettaNumber;
+	if (ThetaNumber) dt = ConusRad/(double)ThetaNumber;
+	if (PhiNumber) df = m_2pi/(double)(PhiNumber+1);
 
 	string  folder_name = "Data", fRes = folder_name,
 	str = to_string(ConusGrad)+" "+to_string(PhiNumber)+" "+to_string(ThetaNumber);
@@ -215,30 +190,40 @@ int main(int argc, char* argv[])
 	dir.cd(QString::fromStdString(fRes));
 	QDir::setCurrent(dir.absolutePath());
 
+	Arr2D M_(PhiNumber+1,ThetaNumber+1,4,4);
+	M_.ClearArr();
 	vector<Arr2D> M;
-	unsigned int  orn = 0;
-//	double dcos_sum = 0.0;
-	area_min = 2.5*lm*Radius*2.0;
-	//cout << endl << folder_name.c_str();
+	M.clear();
+	for (uint q=0;q<16; q++)
+		M.push_back(M_);
+
+	uint orn = 0;
+	double dcos_sum = 0.0;
 	cout <<endl;
 	//----------------------------------------------------------------------------
 	AllowedMask.clear();
-	for(unsigned int  i=0; i<NumTr; i++)
-		AllowedMaskAppend(const_cast <char*> (tr_beams[i].c_str()));
+	for (uint i=0; i<AllowedTrajectoryNumber; i++)
+		AllowedMaskAppend(allowed_beams_mask[i].c_str());
 
+	//Run over all trajectories in params.dat
 	list<Chain>::const_iterator cm = mask.begin();
 	for(;cm!=mask.end();cm++)
 	{
-		unsigned int  pn = 0, sm = cm->sz;
+		uint  pn = 0, sm = cm->Size();
+		//Run over list of alowed trajectories
 		for(list<Chain>::const_iterator ct = AllowedMask.begin();ct!=AllowedMask.end();ct++, pn++)
 		{
-			unsigned int  st = ct->sz;
+			uint  st = ct->Size();
+			// check size
 			if(sm!=st) continue;
-			list<unsigned int >::const_iterator im = cm->Ch.begin(), it = ct->Ch.begin();
+
+			list<unsigned int>::const_iterator im = cm->Ch.begin(), it = ct->Ch.begin();
+			// run over all equal elements
 			for(;im!=cm->Ch.end() && (*im)==(*it);im++, it++);
+			// if ran all elements, trajectories are equal
 			if(im==cm->Ch.end())
 			{
-				unsigned int  vi;
+				uint  vi;
 				string tr;
 				if(!pn) { vi = 0; tr = "0"; }
 				else if(pn==1) { vi = 1; tr = "070"; }
@@ -256,7 +241,7 @@ int main(int argc, char* argv[])
 				else if(pn==22) { vi =  13; tr = "27654"; }
 				else if(pn==23) { vi =  14; tr = "45672"; }
 				else { vi =  15;  tr = "2674XL"; }
-				maska[vi] = 1;
+				Muller_mask[vi] = 1;
 				ofstream out(("ga_"+tr+".dat").c_str(), ios::out);
 				out << to_string(BettaNumber) << " " << to_string(ThetaNumber) << " " << to_string(dbetta/Rad) << " " << to_string(dt/Rad);
 				out.close();
@@ -264,114 +249,69 @@ int main(int argc, char* argv[])
 			}
 		}
 	}
+	// I stoped here
 
 	//----------------------------------------------------------------------------
 	ofstream out("out.dat", ios::out);
 	out.close();
-	double sum_dgamma = 0.0, norm = (GammaNumber>0) ? 1.0/(M_PI/3.0) : 1.0;
+	double sum_dgamma = 0.0, norm = (GammaNumber>0 ? 1.0/(M_PI/3.0) : 1.0);
 	try
 	{
 		for(int Betta_i=0; Betta_i<=BettaNumber; Betta_i++)
 		{
 			if(!Betta_i) cout << endl << "0% ";
-			double betta = betta_min_Rad+(double)Betta_i*dbetta;
-			unsigned int  NumLim = FillLim(ConusRad,betta,GammaLimmExtendedCoeff,(char*)"out.dat");
+			double betta = betta_min_Rad+(double)Betta_i*dbetta, dcos;
+			if(BettaNumber)
+			{
+				if(!Betta_i) dcos = (cos(betta)-cos(betta+dbetta))/2.0;
+				else if(Betta_i==BettaNumber) dcos = (cos(betta-dbetta)-cos(betta))/2.0;
+				else dcos = (cos(betta-dbetta)-cos(betta+dbetta))/2.0;
+			}
+			else dcos = 1.0;
+			dcos_sum += dcos;
+			uint  NumLim = FillLim(ConusRad,betta,GammaLimmExtendedCoeff,(char*)"out.dat");
 			if(!NumLim) continue;
 			sum_dgamma = 0.0;
 			M.clear();
 			Arr2D M_(PhiNumber+1,ThetaNumber+1,4,4); M_.ClearArr();
-			for(unsigned int q=0;q<NumSum; q++)
+			for(uint q=0;q<AllowedMullerMatrixNumber; q++)
 				M.push_back(M_);
 			//-------------------------------------------------------------------------
+			if(!GammaNumber) NumLim = 1;
 			for(Lim=0;Lim<NumLim;Lim++)
 			{
 				cout << ". ";
 				if(GammaNumber) dgamma = sort_lim[Lim]/GammaNumber;
 				int Gamma_Number=0;
-				if(Lim) Gamma_Number = floor(sort_lim[Lim-1]/dgamma); // GammaNumber - число "внутренних" шагов в цикле, которые нужно пропустить
+				if(Lim) Gamma_Number = 1+floor(sort_lim[Lim-1]/dgamma); // GammaNumber - число "внутренних" шагов в цикле, которые нужно пропустить
 				for(int Gamma_j=-GammaNumber; Gamma_j<=GammaNumber; Gamma_j++)
 				{
 					if(Lim && abs(Gamma_j)<Gamma_Number) continue; // пропускаем внутренние шаги
 					double gamma = gamma_cnt+Gamma_j*dgamma,
-					Pgamma = dgamma;
+						   Pgamma = dgamma;
 					if(Lim && abs(Gamma_j) == Gamma_Number) Pgamma = (Gamma_Number+0.5)*dgamma-sort_lim[Lim-1];
 					if(GammaNumber && (abs(Gamma_j) == GammaNumber)) Pgamma -= 0.5*dgamma;
 					sum_dgamma += Pgamma;
 					Body->ChangePosition(betta, gamma, 0);
-					j_tmp.clear();
+					Jones_temp.clear();
 					Arr2DC tmp_(PhiNumber+1,ThetaNumber+1,2,2); tmp_.ClearArr();
-					for(unsigned int q=0;q<NumSum; q++)
-						j_tmp.push_back(tmp_);
+					for(uint q=0;q<AllowedMullerMatrixNumber; q++)
+						Jones_temp.push_back(tmp_);
 					Body->FTforConvexCrystal(Handler);
-					for(unsigned int q=0; q<NumSum; q++)
+					for(uint q=0; q<AllowedMullerMatrixNumber; q++)
 					{
-						if(maska[q]==1)
+						if(Muller_mask[q]==1)
 						{
-							for(unsigned int  j_tt=0; j_tt<=ThetaNumber; j_tt++)
-							for(unsigned int  i_fi=0; i_fi<=PhiNumber; i_fi++)
-							{
-								matrix m_tmp = Mueller(j_tmp[q](i_fi,j_tt));
-								M[q].insert(i_fi,j_tt,Pgamma*norm*m_tmp);
-							}
+							for(uint  j_tt=0; j_tt<=ThetaNumber; j_tt++)
+								for(uint  i_fi=0; i_fi<=PhiNumber; i_fi++)
+								{
+									matrix m_tmp = Mueller(Jones_temp[q](i_fi,j_tt));
+									M[q].insert(i_fi,j_tt,Pgamma*norm*m_tmp);
+								}
 						}
 					}
 				}
 				//cout << endl << to_string(Lim);
-			}
-			// вывод в файл
-			string name_f = "b_"+to_string(betta/Rad);
-			for(unsigned int q=0; q<NumSum; q++)
-			{
-				string tr;
-				if(!q) tr = "0";
-				else if(q==1) tr = "070";
-				else if(q==2) tr = "3";
-				else if(q==3) tr = "363";
-				else if(q==4) tr = "2674_2764_4672_4762";
-				else if(q==5) tr = "3673_3763";
-				else if(q==6) tr = "0670_0760";
-				else if(q==7) tr = "370673_376073";
-				else if(q==8) tr = "063760_067360";
-				else if(q==9) tr = "2673_2763";
-				else if(q==10) tr = "4673_4763";
-				else if(q==11) tr = "21674";
-				else if(q==12) tr = "47612";
-				else if(q==13) tr = "27654";
-				else if(q==14) tr = "45672";
-				else if(q==15) tr = "2674XL";
-				if(maska[q]==1)
-				{
-
-					ofstream f((name_f+"_"+tr+".dat").c_str(), ios::out), res(("ga_"+tr+".dat").c_str(), ios::app);
-					f << str.c_str();
-
-					matrix sum(4,4);
-					for(uint j_tt=0; j_tt<=ThetaNumber; j_tt++)
-					{
-						sum.Fill(0);
-						double tt = (double)j_tt*dt/Rad;
-						for(uint i_fi=0; i_fi<=PhiNumber; i_fi++)
-						{
-							double fi = -((double)i_fi)*df;
-							matrix m = M[q](i_fi,j_tt), L(4,4);
-							f << endl << tt << " " << -fi/Rad << " "; f << m;
-							L[0][0] = 1.0; L[0][1] = 0.0; L[0][2] = 0.0; L[0][3] = 0.0;
-							L[1][0] = 0.0; L[1][1] = cos(2.0*fi); L[1][2] = sin(2.0*fi); L[1][3] = 0.0;
-							L[2][0] = 0.0; L[2][1] =-sin(2.0*fi); L[2][2] = cos(2.0*fi); L[2][3] = 0.0;
-							L[3][0] = 0.0; L[3][1] = 0.0; L[3][2] = 0.0; L[3][3] = 1.0;
-							if(!j_tt)
-								sum += L*m*L;
-							else
-								sum += m*L;
-						}
-						sum /= (PhiNumber+1.0);
-						res << endl << betta/Rad << " " << tt << " ";;
-						res << sum;
-					}
-					f.close();
-					res << endl;
-					res.close();
-				}
 			}
 			orn++;
 			cout <<"\r                        \r";
@@ -383,6 +323,68 @@ int main(int argc, char* argv[])
 		cout << endl << s << "\nPress any key.";
 		getch(); return 1;
 	}
+
+	// вывод в файл
+	string name_f;
+	if(GammaNumber)
+	 name_f = "random_";
+	 else name_f = "b_"+to_string(betta_min_Rad/Rad)+"_";
+
+	for(uint q=0; q<AllowedMullerMatrixNumber; q++)
+	{
+		string tr;
+		if(!q) tr = "0";
+		else if(q==1) tr = "070";
+		else if(q==2) tr = "3";
+		else if(q==3) tr = "363";
+		else if(q==4) tr = "2674_2764_4672_4762";
+		else if(q==5) tr = "3673_3763";
+		else if(q==6) tr = "0670_0760";
+		else if(q==7) tr = "370673_376073";
+		else if(q==8) tr = "063760_067360";
+		else if(q==9) tr = "2673_2763";
+		else if(q==10) tr = "4673_4763";
+		else if(q==11) tr = "21674";
+		else if(q==12) tr = "47612";
+		else if(q==13) tr = "27654";
+		else if(q==14) tr = "45672";
+		else if(q==15) tr = "2674XL";
+		if(Muller_mask[q]==1)
+		{
+
+			ofstream f((name_f+"_"+tr+".dat").c_str(), ios::out), res(("ga_"+tr+".dat").c_str(), ios::app);
+			f << (to_string(params[12])+" "+to_string(PhiNumber)+" "+to_string(ThetaNumber)).c_str();
+			res << endl<< "tetta M11 M12 M13 M14 M21 M22 M23 M24 M31 M32 M33 M34 M41 M42 M43 M44";
+
+			matrix sum(4,4);
+			for(uint j_tt=0; j_tt<=ThetaNumber; j_tt++)
+			{
+				sum.Fill(0);
+				double tt = (double)j_tt*dt/Rad;
+				for(uint i_fi=0; i_fi<=PhiNumber; i_fi++)
+				{
+					double fi = -((double)i_fi)*df;
+					matrix m = M[q](i_fi,j_tt), L(4,4);
+					f << endl << tt << " " << -fi/Rad << " "; f << m;
+					L[0][0] = 1.0; L[0][1] = 0.0; L[0][2] = 0.0; L[0][3] = 0.0;
+					L[1][0] = 0.0; L[1][1] = cos(2.0*fi); L[1][2] = sin(2.0*fi); L[1][3] = 0.0;
+					L[2][0] = 0.0; L[2][1] =-sin(2.0*fi); L[2][2] = cos(2.0*fi); L[2][3] = 0.0;
+					L[3][0] = 0.0; L[3][1] = 0.0; L[3][2] = 0.0; L[3][3] = 1.0;
+					if(!j_tt)
+						sum += L*m*L;
+					else
+						sum += m*L;
+				}
+				sum /= (PhiNumber+1.0);
+				res << endl << tt << " ";;
+				res << sum;
+			}
+			f.close();
+			res << endl;
+			res.close();
+		}
+	}
+
 
 	//----------------------------------------------------------------------------
 	ofstream _out("out.dat", ios::out);
@@ -400,7 +402,7 @@ int main(int argc, char* argv[])
 
 void Handler(Beam& bm)
 {
-	unsigned int  pn = 0, szP = SizeP(bm);
+	uint  pn = 0, szP = SizeP(bm);
 	if(NumberOfTrajectory)
 	{
 		// поиск - нужно ли учитывать пучок с данной траекторией?
@@ -408,9 +410,9 @@ void Handler(Beam& bm)
 		list<Chain>::const_iterator c = mask.begin();
 		for(;c!=mask.end();c++)
 		{
-			list<unsigned int >::const_iterator it = c->Ch.begin();
+			list<uint >::const_iterator it = c->Ch.begin();
 			if(szP!=c->sz) continue;
-			list<unsigned int >::const_iterator fs = bm.BeginP();
+			list<uint >::const_iterator fs = bm.BeginP();
 			for(;it!=c->Ch.end() && (*it)==(*fs);it++, fs++);
 			if(it==c->Ch.end())
 			{
@@ -425,9 +427,9 @@ void Handler(Beam& bm)
 		c = AllowedMask.begin();
 		for(;c!=AllowedMask.end();c++, pn++)
 		{
-			list<unsigned int >::const_iterator it = c->Ch.begin();
+			list<uint >::const_iterator it = c->Ch.begin();
 			if(szP!=c->sz) continue;
-			list<unsigned int >::const_iterator fs = bm.BeginP();
+			list<uint >::const_iterator fs = bm.BeginP();
 			for(;it!=c->Ch.end() && (*it)==(*fs);it++, fs++);
 			if(it==c->Ch.end())
 			{
@@ -443,7 +445,7 @@ void Handler(Beam& bm)
 	if(ctetta < 0.17364817766693034885171662676931) return;
 
 	//----------------------------------------------------------------------------
-	unsigned int  vi;
+	uint  vi;
 	if(pn<=3) vi = pn;
 	else if(pn>3 && pn<8) vi = 4;
 	else if(pn==8 || pn==9) vi = 5;
@@ -486,8 +488,8 @@ void Handler(Beam& bm)
 		}
 		bm.SetCoefficients_abcd(bm.N, Nx, Ny, r0);
 	}
-	for(unsigned int  i_fi=0; i_fi<=PhiNumber; i_fi++)
-		for(unsigned int  j_tt=0; j_tt<=ThetaNumber; j_tt++)
+	for(uint  i_fi=0; i_fi<=PhiNumber; i_fi++)
+		for(uint  j_tt=0; j_tt<=ThetaNumber; j_tt++)
 		{
 			double f = (double)i_fi*df, t = (double)j_tt*dt,
 			cf = cos(f), sf = sin(f), ct = cos(t), st = sin(t);
@@ -513,7 +515,7 @@ void Handler(Beam& bm)
 				fn = bm.DiffractionInclinePr(vr, lm);
 			}
 			matrixC fn_jn = exp_im(m_2pi*(lng_proj0-vr*r0)/lm)*bm();
-			j_tmp[vi].insert(i_fi,j_tt,fn*Jn_rot*fn_jn);
+			Jones_temp[vi].insert(i_fi,j_tt,fn*Jn_rot*fn_jn);
 		}
 }
 
@@ -522,7 +524,7 @@ void Handler(Beam& bm)
 void HandlerTemp(Beam& bm )
 {
 	//----------------------------------------------------------------------------
-	unsigned int  pn, szP = SizeP(bm);
+	uint  pn, szP = SizeP(bm);
 	if(NumberOfTrajectory)
 	{
 		// поиск - нужно ли учитывать пучок с данной траекторией?
@@ -530,9 +532,9 @@ void HandlerTemp(Beam& bm )
 		list<Chain>::const_iterator c = mask.begin();
 		for(pn=0;c!=mask.end();c++, pn++)
 		{
-			list<unsigned int >::const_iterator it = c->Ch.begin();
+			list<uint >::const_iterator it = c->Ch.begin();
 			if(szP!=c->sz) continue;
-			list<unsigned int >::const_iterator fs = bm.BeginP();
+			list<uint >::const_iterator fs = bm.BeginP();
 			for(;it!=c->Ch.end() && (*it)==(*fs);it++, fs++);
 			if(it==c->Ch.end())
 			{
@@ -548,9 +550,9 @@ void HandlerTemp(Beam& bm )
 		c = AllowedMask.begin();
 		for(;c!=AllowedMask.end();c++, pn++)
 		{
-			list<unsigned int >::const_iterator it = c->Ch.begin();
+			list<uint >::const_iterator it = c->Ch.begin();
 			if(szP!=c->sz) continue;
-			list<unsigned int >::const_iterator fs = bm.BeginP();
+			list<uint >::const_iterator fs = bm.BeginP();
 			for(;it!=c->Ch.end() && (*it)==(*fs);it++, fs++);
 			if(it==c->Ch.end())
 			{
@@ -587,11 +589,11 @@ void HandlerTemp(Beam& bm )
 
 const int size = 256;
 
-int ReadFile(char* name, double* params, unsigned int n)
+int ReadFile(char* name, double* params, uint n)
 {
 	char buf[size]=""; //буфер
 	ifstream in(name, ios::in); //входной файл
-	for(unsigned int i=0; i<n; i++)
+	for(uint i=0; i<n; i++)
 	{
 		if(in.eof()) return 1;
 		in.getline(buf, size);
@@ -616,15 +618,15 @@ int ReadFile(char* name, double* params, unsigned int n)
 	NumberOfTrajectory = strtod(buf, NULL);
 	if(NumberOfTrajectory>0)
 	{
-		Face = new unsigned int*[int(Itr)+1];
-		for(unsigned int i=0;i<Itr+1; i++)
-			Face[i] = new unsigned int[_NoF];
+		Face = new uint*[int(Itr)+1];
+		for(uint i=0;i<Itr+1; i++)
+			Face[i] = new uint[_NoF];
 
-		for(unsigned int i=0;i<Itr+1;i++)
-			for(unsigned int j=0;j<_NoF;j++)
+		for(uint i=0;i<Itr+1;i++)
+			for(uint j=0;j<_NoF;j++)
 				Face[i][j] = 0;
 
-		for(unsigned int j=0;j<NumberOfTrajectory;j++) {
+		for(uint j=0;j<NumberOfTrajectory;j++) {
 			if(in.eof()) return 1;
 			in.getline(buf, size);
 			MaskAppend(buf);
@@ -636,12 +638,12 @@ int ReadFile(char* name, double* params, unsigned int n)
 }
 
 
-void MaskAppend(char s[])
+void MaskAppend(const char *s)
 {
-	list<unsigned int> ch;
-	unsigned int intern_numb = 0;
+	list<uint> ch;
+	uint intern_numb = 0;
 	char *buf,*end;
-	end=s;
+	end=(char*)s;
 	do
 	{
 		buf=end;
@@ -660,11 +662,11 @@ void MaskAppend(char s[])
 }
 
 //---------------------------------------------------------------------------
-void AllowedMaskAppend(char s[])
+void AllowedMaskAppend(const char *s)
 {
-	list<unsigned int> ch;
+	list<uint> ch;
 	char *buf,*end;
-	end=s;
+	end= (char*)s;
 	do
 	{
 		buf=end;
@@ -685,7 +687,7 @@ void AllowedMaskAppend(char s[])
 
 void DelFace(void)
 {
-	for(unsigned int i=0;i<_NoF; i++)
+	for(uint i=0;i<_NoF; i++)
 		delete[] Face[i];
 	delete[] Face;
 }
@@ -713,14 +715,14 @@ void ShowCurrentTime(void)
 }
 
 //---------------------------------------------------------------------------
-unsigned int FillLim(double ConusRad, double betta, double sc_coef, char* name)
+uint FillLim(double ConusRad, double betta, double sc_coef, char* name)
 {
 	ofstream out(name, ios::app);
 	out << endl << endl << "betta = " << betta/Rad;
-	unsigned int  nl = 0;
-	for(uint ns=0;ns<NumSum;ns++)
+	uint  nl = 0;
+	for(uint ns=0;ns<AllowedMullerMatrixNumber;ns++)
 	{
-		if(!maska[ns]) continue;
+		if(!Muller_mask[ns]) continue;
 		switch (ns)
 		{
 			case 0: n_tr = 0; break;
@@ -835,13 +837,13 @@ unsigned int FillLim(double ConusRad, double betta, double sc_coef, char* name)
 		}
 	}
 
-	double copy_lim[NumSum];
-	for(uint i=0; i<NumSum; copy_lim[i]=lim[i], sort_lim[i]=0.0, i++);
+	double copy_lim[AllowedMullerMatrixNumber];
+	for(uint i=0; i<AllowedMullerMatrixNumber; copy_lim[i]=lim[i], sort_lim[i]=0.0, i++);
 	for(int i=nl-1; i>=0; i--)
 	{
 		double max = -1.0;
 		int mx=0;
-		for(uint j=0; j<NumSum; j++)
+		for(uint j=0; j<AllowedMullerMatrixNumber; j++)
 			if(copy_lim[j]>max) { max = copy_lim[j]; mx = j; }
 		sort_lim[i] = max;
 		copy_lim[mx] = -1.0;
