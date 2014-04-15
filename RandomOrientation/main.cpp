@@ -14,7 +14,7 @@
 #include "..\Lib\PhysMtr.hpp"
 #include "..\Lib\Mueller.hpp"
 #include "..\Lib\particle.hpp"
-typedef uint uint;
+//typedef unsigned int uint;
 
 using namespace std;
 //==============================================================================
@@ -60,7 +60,7 @@ const double	Rad = M_PI/180.;				///< Grad to Rad coefficient
 double			df = 0.0,						///< dPhi
 				dt = 0.0;						///< dTheta
 const uint		AllowedTrajectoryNumber = 28,	///< Number of trajectories that can be calculated
-				AllowedMullerMatrixNumber = 16;	///< Maximal allowed number of muller matrixes
+				AllowedMuellerMatrixNumber = 16;	///< Maximal allowed number of muller matrixes
 
 /// The list of trajectories that can be calculated
 const string	allowed_beams_mask[AllowedTrajectoryNumber]
@@ -68,12 +68,12 @@ const string	allowed_beams_mask[AllowedTrajectoryNumber]
 												"0 7 6 0", "3 7 0 6 7 3", "3 7 6 0 7 3", "0 6 3 7 6 0", "0 6 7 3 6 0", "2 6 7 3", "2 7 6 3", "4 6 7 3",
 												"4 7 6 3", "2 1 6 7 4", "4 7 6 1 2", "2 7 6 5 4", "4 5 6 7 2", "2 7 0 6 7 4", "2 7 6 0 7 4", "4 7 0 6 7 2", "4 7 6 0 7 2"};
 /// The mask of allowed muller matrixes
-int				Muller_mask[AllowedMullerMatrixNumber]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+int				Mueller_mask[AllowedMuellerMatrixNumber]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 uint			n_tr,							// номер траектории, для которой вычисляется gamma_lim
 				Lim;							// номер текущей области из массива sort_lim
 double			NumberOfRing,					// номер дифракционного кольца для пучка с номером n_tr
 				bm_tetta,						// tetta_координата для пучка с номером n_tr
-				lim[AllowedMullerMatrixNumber]={-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0}, sort_lim[AllowedMullerMatrixNumber];
+				lim[AllowedMuellerMatrixNumber]={-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0}, sort_lim[AllowedMuellerMatrixNumber];
 vector<Arr2DC>	Jones_temp;
 
 
@@ -102,7 +102,7 @@ void ShowCurrentTime(void);
 void DelFace(void);
 
 /// Find out the GammaLim for every trajectory we take into account
-uint FillLim(double ConusRad, double betta, double sc_coef, char* name);
+uint FillLim(double ConusRad, double betta, double sc_coef, const char *name);
 
 
 //---------------------------------------------------------------------------
@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		if(ReadFile((char*)"params.dat", params, NumberOfParameters))
+		if (ReadFile((char*)"params.dat", params, NumberOfParameters))
 		{
 			cout << "\nError! Incorrect input file. Press any key for exit.";
 			getch(); return 1;
@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
 	PhiNumber =				params[14];
 	perpend_diff =			(params[15]>0.5?true:false);
 
-	if(Halh_Height<=0 || Radius<=0 || NumberOfTrajectory==0)
+	if (Halh_Height<=0 || Radius<=0 || NumberOfTrajectory==0)
 	{
 		cout << "\nError! Incorrect input data. Press any key for exit.";
 		getch(); return 1;
@@ -178,8 +178,8 @@ int main(int argc, char* argv[])
 	//----------------------------------------------------------------------------
 	Body->Phase() = true;
 
-	double 	gamma_cnt = M_PI/6.0, dbetta = 0.0, dgamma = 1.0, ConusRad = ConusGrad*Rad;//, Tgamma;
-	if (BettaNumber) dbetta = (betta_max_Rad-betta_min_Rad)/BettaNumber;
+	double 	gamma_cnt = M_PI/6.0, dBettaRad = 0.0, dGammaRad = 1.0, ConusRad = ConusGrad*Rad;//, Tgamma;
+	if (BettaNumber) dBettaRad = (betta_max_Rad-betta_min_Rad)/(double)BettaNumber;
 	if (ThetaNumber) dt = ConusRad/(double)ThetaNumber;
 	if (PhiNumber) df = m_2pi/(double)(PhiNumber+1);
 
@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
 	M_.ClearArr();
 	vector<Arr2D> M;
 	M.clear();
-	for (uint q=0;q<16; q++)
+	for (uint q=0;q<AllowedMuellerMatrixNumber; q++)
 		M.push_back(M_);
 
 	uint orn = 0;
@@ -207,106 +207,115 @@ int main(int argc, char* argv[])
 
 	//Run over all trajectories in params.dat
 	list<Chain>::const_iterator cm = mask.begin();
-	for(;cm!=mask.end();cm++)
+	for (;cm!=mask.end();cm++)
 	{
 		uint  pn = 0, sm = cm->Size();
 		//Run over list of alowed trajectories
-		for(list<Chain>::const_iterator ct = AllowedMask.begin();ct!=AllowedMask.end();ct++, pn++)
+		for (list<Chain>::const_iterator ct = AllowedMask.begin();ct!=AllowedMask.end();ct++, pn++)
 		{
 			uint  st = ct->Size();
 			// check size
-			if(sm!=st) continue;
+			if (sm!=st) continue;
 
 			list<unsigned int>::const_iterator im = cm->Ch.begin(), it = ct->Ch.begin();
 			// run over all equal elements
-			for(;im!=cm->Ch.end() && (*im)==(*it);im++, it++);
+			for (;im!=cm->Ch.end() && (*im)==(*it);im++, it++);
 			// if ran all elements, trajectories are equal
-			if(im==cm->Ch.end())
+			if (im==cm->Ch.end())
 			{
 				uint  vi;
 				string tr;
-				if(!pn) { vi = 0; tr = "0"; }
-				else if(pn==1) { vi = 1; tr = "070"; }
-				else if(pn==2) { vi = 2; tr = "3"; }
-				else if(pn==3) { vi = 3; tr = "363"; }
-				else if(pn>3 && pn<8) { vi = 4; tr = "2674_2764_4672_4762"; }
-				else if(pn==8 || pn==9) { vi = 5; tr = "3673_3763"; }
-				else if(pn==10 || pn==11) { vi = 6; tr = "0670_0760"; }
-				else if(pn==12 || pn==13) { vi = 7; tr = "370673_376073"; }
-				else if(pn==14 || pn==15) { vi = 8; tr = "063760_067360"; }
-				else if(pn==16 || pn==17) { vi = 9; tr = "2673_2763"; }
-				else if(pn==18 || pn==19) { vi = 10; tr = "4673_4763"; }
-				else if(pn==20) { vi =  11; tr = "21674"; }
-				else if(pn==21) { vi =  12; tr = "47612"; }
-				else if(pn==22) { vi =  13; tr = "27654"; }
-				else if(pn==23) { vi =  14; tr = "45672"; }
+				if (!pn) { vi = 0; tr = "0"; }
+				else if (pn==1) { vi = 1; tr = "070"; }
+				else if (pn==2) { vi = 2; tr = "3"; }
+				else if (pn==3) { vi = 3; tr = "363"; }
+				else if (pn>3 && pn<8) { vi = 4; tr = "2674_2764_4672_4762"; }
+				else if (pn==8 || pn==9) { vi = 5; tr = "3673_3763"; }
+				else if (pn==10 || pn==11) { vi = 6; tr = "0670_0760"; }
+				else if (pn==12 || pn==13) { vi = 7; tr = "370673_376073"; }
+				else if (pn==14 || pn==15) { vi = 8; tr = "063760_067360"; }
+				else if (pn==16 || pn==17) { vi = 9; tr = "2673_2763"; }
+				else if (pn==18 || pn==19) { vi = 10; tr = "4673_4763"; }
+				else if (pn==20) { vi =  11; tr = "21674"; }
+				else if (pn==21) { vi =  12; tr = "47612"; }
+				else if (pn==22) { vi =  13; tr = "27654"; }
+				else if (pn==23) { vi =  14; tr = "45672"; }
 				else { vi =  15;  tr = "2674XL"; }
-				Muller_mask[vi] = 1;
+				Mueller_mask[vi] = 1;
 				ofstream out(("ga_"+tr+".dat").c_str(), ios::out);
-				out << to_string(BettaNumber) << " " << to_string(ThetaNumber) << " " << to_string(dbetta/Rad) << " " << to_string(dt/Rad);
+				out << to_string(BettaNumber) << " " << to_string(ThetaNumber) << " " << to_string(dBettaRad/Rad) << " " << to_string(dt/Rad);
 				out.close();
 				break;
 			}
 		}
 	}
-	// I stoped here
+
 
 	//----------------------------------------------------------------------------
 	ofstream out("out.dat", ios::out);
-	out.close();
-	double sum_dgamma = 0.0, norm = (GammaNumber>0 ? 1.0/(M_PI/3.0) : 1.0);
+	out.close();	
+	double dgamma_sum = 0.0, norm = (GammaNumber>0 ? 1.0/(M_PI/3.0) : 1.0);
 	try
 	{
-		for(int Betta_i=0; Betta_i<=BettaNumber; Betta_i++)
+		for (int Betta_i=0; Betta_i<=BettaNumber; Betta_i++)
 		{
-			if(!Betta_i) cout << endl << "0% ";
-			double betta = betta_min_Rad+(double)Betta_i*dbetta, dcos;
-			if(BettaNumber)
+			if (!Betta_i)
+				cout << endl << "0% ";
+			double bettaRad = betta_min_Rad+(double)Betta_i*dBettaRad,
+				dcos;
+			if (BettaNumber)
 			{
-				if(!Betta_i) dcos = (cos(betta)-cos(betta+dbetta))/2.0;
-				else if(Betta_i==BettaNumber) dcos = (cos(betta-dbetta)-cos(betta))/2.0;
-				else dcos = (cos(betta-dbetta)-cos(betta+dbetta))/2.0;
+				if (!Betta_i)
+					dcos = (cos(bettaRad)-cos(bettaRad+dBettaRad))/2.0;
+				else if (Betta_i==BettaNumber)
+					dcos = (cos(bettaRad-dBettaRad)-cos(bettaRad))/2.0;
+				else
+					dcos = (cos(bettaRad-dBettaRad)-cos(bettaRad+dBettaRad))/2.0;
 			}
-			else dcos = 1.0;
+			else
+				dcos = 1.0;
+			//dcos=1.0;
+
 			dcos_sum += dcos;
-			uint  NumLim = FillLim(ConusRad,betta,GammaLimmExtendedCoeff,(char*)"out.dat");
-			if(!NumLim) continue;
-			sum_dgamma = 0.0;
-			M.clear();
-			Arr2D M_(PhiNumber+1,ThetaNumber+1,4,4); M_.ClearArr();
-			for(uint q=0;q<AllowedMullerMatrixNumber; q++)
-				M.push_back(M_);
+			uint  NumLim = FillLim(ConusRad, bettaRad, GammaLimmExtendedCoeff, "out.dat");
+			if (!NumLim) continue;
+			dgamma_sum = 0.0;
 			//-------------------------------------------------------------------------
-			if(!GammaNumber) NumLim = 1;
-			for(Lim=0;Lim<NumLim;Lim++)
+			if (!GammaNumber)
+				NumLim = 1;
+			for (Lim=0;Lim<NumLim;Lim++)
 			{
 				cout << ". ";
-				if(GammaNumber) dgamma = sort_lim[Lim]/GammaNumber;
-				int Gamma_Number=0;
-				if(Lim) Gamma_Number = 1+floor(sort_lim[Lim-1]/dgamma); // GammaNumber - число "внутренних" шагов в цикле, которые нужно пропустить
-				for(int Gamma_j=-GammaNumber; Gamma_j<=GammaNumber; Gamma_j++)
+				if (GammaNumber)
+					dGammaRad = sort_lim[Lim]/(double)GammaNumber;
+				int Gamma_Number_to_skip=0;
+				if (Lim) Gamma_Number_to_skip = 1+floor(sort_lim[Lim-1]/dGammaRad); // GammaNumber - число "внутренних" шагов в цикле, которые нужно пропустить
+				for (int Gamma_j=-GammaNumber; Gamma_j<=GammaNumber; Gamma_j++)
 				{
-					if(Lim && abs(Gamma_j)<Gamma_Number) continue; // пропускаем внутренние шаги
-					double gamma = gamma_cnt+Gamma_j*dgamma,
-						   Pgamma = dgamma;
-					if(Lim && abs(Gamma_j) == Gamma_Number) Pgamma = (Gamma_Number+0.5)*dgamma-sort_lim[Lim-1];
-					if(GammaNumber && (abs(Gamma_j) == GammaNumber)) Pgamma -= 0.5*dgamma;
-					sum_dgamma += Pgamma;
-					Body->ChangePosition(betta, gamma, 0);
+					if (Lim && abs(Gamma_j)<Gamma_Number_to_skip) continue; // пропускаем внутренние шаги
+					double gamma = gamma_cnt+Gamma_j*dGammaRad,
+						   Pgamma = dGammaRad;
+					if (Lim && abs(Gamma_j) == Gamma_Number_to_skip)
+						Pgamma = ((double)Gamma_Number_to_skip+0.5)*dGammaRad-sort_lim[Lim-1];
+					if (GammaNumber && (abs(Gamma_j) == GammaNumber))
+						Pgamma -= 0.5*dGammaRad;
+					dgamma_sum += Pgamma;
+					Body->ChangePosition(bettaRad, gamma, 0);
 					Jones_temp.clear();
-					Arr2DC tmp_(PhiNumber+1,ThetaNumber+1,2,2); tmp_.ClearArr();
-					for(uint q=0;q<AllowedMullerMatrixNumber; q++)
+					Arr2DC tmp_(PhiNumber+1,ThetaNumber+1,2,2);
+					tmp_.ClearArr();
+					for (uint q=0;q<AllowedMuellerMatrixNumber; q++)
 						Jones_temp.push_back(tmp_);
 					Body->FTforConvexCrystal(Handler);
-					for(uint q=0; q<AllowedMullerMatrixNumber; q++)
+					for (uint q=0; q<AllowedMuellerMatrixNumber; q++)
 					{
-						if(Muller_mask[q]==1)
+						if (Mueller_mask[q]==1)
 						{
-							for(uint  j_tt=0; j_tt<=ThetaNumber; j_tt++)
-								for(uint  i_fi=0; i_fi<=PhiNumber; i_fi++)
+							for (uint  j_tt=0; j_tt<=ThetaNumber; j_tt++)
+								for (uint  i_fi=0; i_fi<=PhiNumber; i_fi++)
 								{
 									matrix m_tmp = Mueller(Jones_temp[q](i_fi,j_tt));
-									M[q].insert(i_fi,j_tt,Pgamma*norm*m_tmp);
+									M[q].insert(i_fi,j_tt,dcos*Pgamma*norm*m_tmp);
 								}
 						}
 					}
@@ -326,57 +335,62 @@ int main(int argc, char* argv[])
 
 	// вывод в файл
 	string name_f;
-	if(GammaNumber)
-	 name_f = "random_";
-	 else name_f = "b_"+to_string(betta_min_Rad/Rad)+"_";
+	if (GammaNumber)
+		name_f = "random_";
+	else
+		name_f = "b_"+to_string(betta_min_Rad/Rad)+"_";
 
-	for(uint q=0; q<AllowedMullerMatrixNumber; q++)
+	for (uint q=0; q<AllowedMuellerMatrixNumber; q++)
 	{
 		string tr;
-		if(!q) tr = "0";
-		else if(q==1) tr = "070";
-		else if(q==2) tr = "3";
-		else if(q==3) tr = "363";
-		else if(q==4) tr = "2674_2764_4672_4762";
-		else if(q==5) tr = "3673_3763";
-		else if(q==6) tr = "0670_0760";
-		else if(q==7) tr = "370673_376073";
-		else if(q==8) tr = "063760_067360";
-		else if(q==9) tr = "2673_2763";
-		else if(q==10) tr = "4673_4763";
-		else if(q==11) tr = "21674";
-		else if(q==12) tr = "47612";
-		else if(q==13) tr = "27654";
-		else if(q==14) tr = "45672";
-		else if(q==15) tr = "2674XL";
-		if(Muller_mask[q]==1)
+		if (!q) tr = "0";
+		else if (q==1) tr = "070";
+		else if (q==2) tr = "3";
+		else if (q==3) tr = "363";
+		else if (q==4) tr = "2674_2764_4672_4762";
+		else if (q==5) tr = "3673_3763";
+		else if (q==6) tr = "0670_0760";
+		else if (q==7) tr = "370673_376073";
+		else if (q==8) tr = "063760_067360";
+		else if (q==9) tr = "2673_2763";
+		else if (q==10) tr = "4673_4763";
+		else if (q==11) tr = "21674";
+		else if (q==12) tr = "47612";
+		else if (q==13) tr = "27654";
+		else if (q==14) tr = "45672";
+		else if (q==15) tr = "2674XL";
+		if (Mueller_mask[q]==1)
 		{
 
-			ofstream f((name_f+"_"+tr+".dat").c_str(), ios::out), res(("ga_"+tr+".dat").c_str(), ios::app);
-			f << (to_string(params[12])+" "+to_string(PhiNumber)+" "+to_string(ThetaNumber)).c_str();
+			ofstream f((name_f+"_"+tr+".dat").c_str(), ios::out),
+					res(("ga_"+tr+".dat").c_str(), ios::app);
+			f << (to_string(ConusGrad)+" "+to_string(PhiNumber)+" "+to_string(ThetaNumber)).c_str();
 			res << endl<< "tetta M11 M12 M13 M14 M21 M22 M23 M24 M31 M32 M33 M34 M41 M42 M43 M44";
+			f.precision(10);
+			res.precision(10);
+
 
 			matrix sum(4,4);
-			for(uint j_tt=0; j_tt<=ThetaNumber; j_tt++)
+			for (uint j_tt=0; j_tt<=ThetaNumber; j_tt++)
 			{
 				sum.Fill(0);
 				double tt = (double)j_tt*dt/Rad;
-				for(uint i_fi=0; i_fi<=PhiNumber; i_fi++)
+				for (uint i_fi=0; i_fi<=PhiNumber; i_fi++)
 				{
 					double fi = -((double)i_fi)*df;
 					matrix m = M[q](i_fi,j_tt), L(4,4);
 					f << endl << tt << " " << -fi/Rad << " "; f << m;
-					L[0][0] = 1.0; L[0][1] = 0.0; L[0][2] = 0.0; L[0][3] = 0.0;
-					L[1][0] = 0.0; L[1][1] = cos(2.0*fi); L[1][2] = sin(2.0*fi); L[1][3] = 0.0;
-					L[2][0] = 0.0; L[2][1] =-sin(2.0*fi); L[2][2] = cos(2.0*fi); L[2][3] = 0.0;
-					L[3][0] = 0.0; L[3][1] = 0.0; L[3][2] = 0.0; L[3][3] = 1.0;
-					if(!j_tt)
+					L[0][0] = 1.0; L[0][1] = 0.0;			L[0][2] = 0.0;			L[0][3] = 0.0;
+					L[1][0] = 0.0; L[1][1] = cos(2.0*fi);	L[1][2] = sin(2.0*fi);	L[1][3] = 0.0;
+					L[2][0] = 0.0; L[2][1] =-sin(2.0*fi);	L[2][2] = cos(2.0*fi);	L[2][3] = 0.0;
+					L[3][0] = 0.0; L[3][1] = 0.0;			L[3][2] = 0.0;			L[3][3] = 1.0;
+					if (!j_tt)
 						sum += L*m*L;
 					else
 						sum += m*L;
 				}
-				sum /= (PhiNumber+1.0);
-				res << endl << tt << " ";;
+				sum /= ((double)PhiNumber+1.0);
+				res << endl << tt << " ";
 				res << sum;
 			}
 			f.close();
@@ -396,87 +410,88 @@ int main(int argc, char* argv[])
 	cout << "\nAll done. Please, press any key.";
 	getch();
 
-	return 0;//a.exec();;
+	return 0;
 }
 
 
 void Handler(Beam& bm)
 {
 	uint  pn = 0, szP = SizeP(bm);
-	if(NumberOfTrajectory)
+	if (NumberOfTrajectory)
 	{
 		// поиск - нужно ли учитывать пучок с данной траекторией?
 		bool flag = false;
 		list<Chain>::const_iterator c = mask.begin();
-		for(;c!=mask.end();c++)
+		for (;c!=mask.end();c++)
 		{
 			list<uint >::const_iterator it = c->Ch.begin();
-			if(szP!=c->sz) continue;
+			if (szP!=c->sz) continue;
 			list<uint >::const_iterator fs = bm.BeginP();
-			for(;it!=c->Ch.end() && (*it)==(*fs);it++, fs++);
-			if(it==c->Ch.end())
+			for (;it!=c->Ch.end() && (*it)==(*fs);it++, fs++);
+			if (it==c->Ch.end())
 			{
 				flag = true;
 				break;
 			}
 		}
-		if(!flag) return;
+		if (!flag) return;
 
 		// поиск - есть ли такая траектория в "фиксированном" списке?
 		flag = false;
 		c = AllowedMask.begin();
-		for(;c!=AllowedMask.end();c++, pn++)
+		for (;c!=AllowedMask.end();c++, pn++)
 		{
 			list<uint >::const_iterator it = c->Ch.begin();
-			if(szP!=c->sz) continue;
+			if (szP!=c->sz) continue;
 			list<uint >::const_iterator fs = bm.BeginP();
-			for(;it!=c->Ch.end() && (*it)==(*fs);it++, fs++);
-			if(it==c->Ch.end())
+			for (;it!=c->Ch.end() && (*it)==(*fs);it++, fs++);
+			if (it==c->Ch.end())
 			{
 				flag = true;
 				break;
 			}
 		}
-		if(!flag) return;
+		if (!flag) return;
 	}
 
 	double ctetta = bm.r*k;
 
-	if(ctetta < 0.17364817766693034885171662676931) return;
+	if (ctetta < 0.17364817766693034885171662676931) return;
 
 	//----------------------------------------------------------------------------
 	uint  vi;
-	if(pn<=3) vi = pn;
-	else if(pn>3 && pn<8) vi = 4;
-	else if(pn==8 || pn==9) vi = 5;
-	else if(pn==10 || pn==11) vi = 6;
-	else if(pn==12 || pn==13) vi = 7;
-	else if(pn==14 || pn==15) vi = 8;
-	else if(pn==16 || pn==17) vi = 9;
-	else if(pn==18 || pn==19) vi = 10;
-	else if(pn==20) vi = 11;
-	else if(pn==21) vi = 12;
-	else if(pn==22) vi = 13;
-	else if(pn==23) vi = 14;
+	if (pn<=3) vi = pn;
+	else if (pn>3 && pn<8) vi = 4;
+	else if (pn==8 || pn==9) vi = 5;
+	else if (pn==10 || pn==11) vi = 6;
+	else if (pn==12 || pn==13) vi = 7;
+	else if (pn==14 || pn==15) vi = 8;
+	else if (pn==16 || pn==17) vi = 9;
+	else if (pn==18 || pn==19) vi = 10;
+	else if (pn==20) vi = 11;
+	else if (pn==21) vi = 12;
+	else if (pn==22) vi = 13;
+	else if (pn==23) vi = 14;
 	else vi = 15;
 
-	if(sort_lim[Lim]>lim[vi]) return;
+	if (sort_lim[Lim]>lim[vi]) return;
 	//----------------------------------------------------------------------------
 
 	bm.F = bm.e;
-	bm.T = bm.F%bm.r; bm.T /=length(bm.T); // базис выходящего пучка
+	bm.T = bm.F%bm.r;
+	bm.T /=length(bm.T); // базис выходящего пучка
 
 	Point3D r0 = CenterOfBeam(bm);
 
 	double lng_proj0 = bm.lng+r0*bm.r;
 
-	if(perpend_diff)
+	if (perpend_diff)
 		bm.SetCoefficients_abcd(bm.r, bm.T, bm.F, r0);
 	else
 	{
 		Point3D Nx, Ny;
 		const double tmp = sqrt(SQR(bm.N.x)+SQR(bm.N.y));
-		if(fabs(bm.N.z)>1-DBL_EPSILON)
+		if (fabs(bm.N.z)>1-DBL_EPSILON)
 		{
 			Nx=Point3D(0,-bm.N.z,0);
 			Ny=Point3D(1,0,0);
@@ -484,25 +499,33 @@ void Handler(Beam& bm)
 		else
 		{
 			Nx=Point3D(bm.N.y/tmp,-bm.N.x/tmp,0);
-			Ny=bm.N%Nx; Ny /= length(Ny);
+			Ny=bm.N%Nx;
+			Ny /= length(Ny);
 		}
 		bm.SetCoefficients_abcd(bm.N, Nx, Ny, r0);
 	}
-	for(uint  i_fi=0; i_fi<=PhiNumber; i_fi++)
-		for(uint  j_tt=0; j_tt<=ThetaNumber; j_tt++)
+	for (uint  i_fi=0; i_fi<=PhiNumber; i_fi++)
+		for (uint  j_tt=0; j_tt<=ThetaNumber; j_tt++)
 		{
-			double f = (double)i_fi*df, t = (double)j_tt*dt,
-			cf = cos(f), sf = sin(f), ct = cos(t), st = sin(t);
-			Point3D vr(st*cf,st*sf,ct), vf, vt;
-			if(!j_tt)
+			double f = (double)i_fi*df,
+				t = (double)j_tt*dt,
+				cf = cos(f),
+				sf = sin(f),
+				ct = cos(t),
+				st = sin(t);
+			Point3D vr(st*cf,st*sf,ct),
+				vf,
+				vt;
+			if (!j_tt)
 				vf = -Ey;
 			else
 				vf = Point3D(-sf,cf,0);
-			vt = vf%vr; vt /= length(vt);
+			vt = vf%vr;
+			vt /= length(vt);
 
 			matrixC Jn_rot(2,2);
 			complex fn(0,0);
-			if(perpend_diff)
+			if (perpend_diff)
 			{
 				Jn_rot[0][0]=-bm.F*vf; Jn_rot[0][1]= bm.T*vf;
 				Jn_rot[1][0]= bm.F*vt; Jn_rot[1][1]=-bm.T*vt;
@@ -516,6 +539,7 @@ void Handler(Beam& bm)
 			}
 			matrixC fn_jn = exp_im(m_2pi*(lng_proj0-vr*r0)/lm)*bm();
 			Jones_temp[vi].insert(i_fi,j_tt,fn*Jn_rot*fn_jn);
+			//Jones_temp[vi].insert(i_fi,j_tt,fn*Jn_rot*bm());
 		}
 }
 
@@ -525,43 +549,43 @@ void HandlerTemp(Beam& bm )
 {
 	//----------------------------------------------------------------------------
 	uint  pn, szP = SizeP(bm);
-	if(NumberOfTrajectory)
+	if (NumberOfTrajectory)
 	{
 		// поиск - нужно ли учитывать пучок с данной траекторией?
 		bool flag = false;
 		list<Chain>::const_iterator c = mask.begin();
-		for(pn=0;c!=mask.end();c++, pn++)
+		for (pn=0;c!=mask.end();c++, pn++)
 		{
 			list<uint >::const_iterator it = c->Ch.begin();
-			if(szP!=c->sz) continue;
+			if (szP!=c->sz) continue;
 			list<uint >::const_iterator fs = bm.BeginP();
-			for(;it!=c->Ch.end() && (*it)==(*fs);it++, fs++);
-			if(it==c->Ch.end())
+			for (;it!=c->Ch.end() && (*it)==(*fs);it++, fs++);
+			if (it==c->Ch.end())
 			{
 				flag = true;
 				break;
 			}
 		}
-		if(!flag) return;
+		if (!flag) return;
 
 		// поиск - есть ли такая траектория в "фиксированном" списке?
 		pn = 0;
 		flag = false;
 		c = AllowedMask.begin();
-		for(;c!=AllowedMask.end();c++, pn++)
+		for (;c!=AllowedMask.end();c++, pn++)
 		{
 			list<uint >::const_iterator it = c->Ch.begin();
-			if(szP!=c->sz) continue;
+			if (szP!=c->sz) continue;
 			list<uint >::const_iterator fs = bm.BeginP();
-			for(;it!=c->Ch.end() && (*it)==(*fs);it++, fs++);
-			if(it==c->Ch.end())
+			for (;it!=c->Ch.end() && (*it)==(*fs);it++, fs++);
+			if (it==c->Ch.end())
 			{
 				flag = true;
 				break;
 			}
 		}
-		if(!flag) return;
-		if(pn!=n_tr) return;
+		if (!flag) return;
+		if (pn!=n_tr) return;
 	}
 	//----------------------------------------------------------------------------
 
@@ -576,12 +600,12 @@ void HandlerTemp(Beam& bm )
 	min_ro_n = curr,
 	max_ro_n = curr;  // пологаем максимуму и минимум равным первому расстоянию
 
-	for(pt++; pt!=bm.End(); pt++)
+	for (pt++; pt!=bm.End(); pt++)
 	{
 		Point3D cur=(*pt)-bm.r*(bm.r*(*pt)); // проецируем вершину на плоскость перпендикулярную пучку,
 		float curr=cur*rn_pr; // вычисляем скалярное произведение проекции нормали и проекции точки
-		if(curr>max_ro_n) max_ro_n=curr;
-		if(curr<min_ro_n) min_ro_n=curr;
+		if (curr>max_ro_n) max_ro_n=curr;
+		if (curr<min_ro_n) min_ro_n=curr;
 	}
 	max_ro_n = max_ro_n-min_ro_n;
 	NumberOfRing = max_ro_n/lm;
@@ -593,9 +617,9 @@ int ReadFile(char* name, double* params, uint n)
 {
 	char buf[size]=""; //буфер
 	ifstream in(name, ios::in); //входной файл
-	for(uint i=0; i<n; i++)
+	for (uint i=0; i<n; i++)
 	{
-		if(in.eof()) return 1;
+		if (in.eof()) return 1;
 		in.getline(buf, size);
 		params[i] = strtod(buf, NULL);
 		if (params[i]<0) throw "All values must be positive in data file";
@@ -603,35 +627,37 @@ int ReadFile(char* name, double* params, uint n)
 	//----------------------------------------------------------------------------
 	switch(0)
 	{ // only for hexagonal
-		case 0: _NoF =  8; break;
-		case 1: _NoF = 13; break;
-		case 2: _NoF =  7; break;
-		case 3: _NoF = 20; break;
-		case 4: _NoF = 14; break;
-		case 5: _NoF = 6; break;
-		case 6: _NoF = 4; break;
-		case 7: _NoF = 5; break;
+	case 0: _NoF =  8; break;
+	case 1: _NoF = 13; break;
+	case 2: _NoF =  7; break;
+	case 3: _NoF = 20; break;
+	case 4: _NoF = 14; break;
+	case 5: _NoF = 6; break;
+	case 6: _NoF = 4; break;
+	case 7: _NoF = 5; break;
 	}
 	Itr =					params[9];
-	if(!in.eof()) {
-	in.getline(buf, size);
-	NumberOfTrajectory = strtod(buf, NULL);
-	if(NumberOfTrajectory>0)
+	if (!in.eof())
 	{
-		Face = new uint*[int(Itr)+1];
-		for(uint i=0;i<Itr+1; i++)
-			Face[i] = new uint[_NoF];
+		in.getline(buf, size);
+		NumberOfTrajectory = strtod(buf, NULL);
+		if (NumberOfTrajectory>0)
+		{
+			Face = new uint*[int(Itr)+1];
+			for (uint i=0;i<Itr+1; i++)
+				Face[i] = new uint[_NoF];
 
-		for(uint i=0;i<Itr+1;i++)
-			for(uint j=0;j<_NoF;j++)
-				Face[i][j] = 0;
+			for (uint i=0;i<Itr+1;i++)
+				for (uint j=0;j<_NoF;j++)
+					Face[i][j] = 0;
 
-		for(uint j=0;j<NumberOfTrajectory;j++) {
-			if(in.eof()) return 1;
-			in.getline(buf, size);
-			MaskAppend(buf);
+			for (uint j=0;j<NumberOfTrajectory;j++)
+			{
+				if (in.eof()) return 1;
+				in.getline(buf, size);
+				MaskAppend(buf);
+			}
 		}
-	}
 	}
 	in.close();
 	return 0;
@@ -687,7 +713,7 @@ void AllowedMaskAppend(const char *s)
 
 void DelFace(void)
 {
-	for(uint i=0;i<_NoF; i++)
+	for (uint i=0;i<_NoF; i++)
 		delete[] Face[i];
 	delete[] Face;
 }
@@ -715,34 +741,34 @@ void ShowCurrentTime(void)
 }
 
 //---------------------------------------------------------------------------
-uint FillLim(double ConusRad, double betta, double sc_coef, char* name)
+uint FillLim(double ConusRad, double betta, double sc_coef, const char* name)
 {
 	ofstream out(name, ios::app);
 	out << endl << endl << "betta = " << betta/Rad;
 	uint  nl = 0;
-	for(uint ns=0;ns<AllowedMullerMatrixNumber;ns++)
+	for (uint ns=0;ns<AllowedMuellerMatrixNumber;ns++)
 	{
-		if(!Muller_mask[ns]) continue;
+		if (!Mueller_mask[ns]) continue;
 		switch (ns)
 		{
-			case 0: n_tr = 0; break;
-			case 1: n_tr = 1; break;
-			case 2: n_tr = 2; break;
-			case 3: n_tr = 3; break;
-			case 4: n_tr = 4; break;
-			case 5: n_tr = 8; break;
-			case 6: n_tr = 10; break;
-			case 7: n_tr = 12; break;
-			case 8: n_tr = 14; break;
-			case 9: n_tr = 16; break;
-			case 10: n_tr = 18; break;
-			case 11: n_tr = 20; break;
-			case 12: n_tr = 21; break;
-			case 13: n_tr = 22; break;
-			case 14: n_tr = 23; break;
-			case 15: n_tr = 24; break;
+		case 0: n_tr = 0; break;
+		case 1: n_tr = 1; break;
+		case 2: n_tr = 2; break;
+		case 3: n_tr = 3; break;
+		case 4: n_tr = 4; break;
+		case 5: n_tr = 8; break;
+		case 6: n_tr = 10; break;
+		case 7: n_tr = 12; break;
+		case 8: n_tr = 14; break;
+		case 9: n_tr = 16; break;
+		case 10: n_tr = 18; break;
+		case 11: n_tr = 20; break;
+		case 12: n_tr = 21; break;
+		case 13: n_tr = 22; break;
+		case 14: n_tr = 23; break;
+		case 15: n_tr = 24; break;
 		}
-		if(ns<2)
+		if (ns<2)
 		{
 			out << endl << '\t' << ns << " " << 30;
 			lim[ns] = M_PI/6.0; nl++; continue;
@@ -759,12 +785,12 @@ uint FillLim(double ConusRad, double betta, double sc_coef, char* name)
 			gamma_end += 5.0*Rad;
 		} while((bm_tetta<ConusRad)&&(gamma_end<88.0*Rad));  // <88.0???
 
-		if(NumberOfRing<0.0)
+		if (NumberOfRing<0.0)
 		{
 			lim[ns] = -1.0; continue; // нет такой траектории
 		}
 
-		if(bm_tetta<ConusRad)    //считаем весь диапазон
+		if (bm_tetta<ConusRad)    //считаем весь диапазон
 			gamma_end=30.0*Rad;
 
 		//методом половинного деления ищем gamma_lim
@@ -776,21 +802,21 @@ uint FillLim(double ConusRad, double betta, double sc_coef, char* name)
 			Body->ChangePosition(betta, M_PI/6.0+gamma_ConusRad,0.0); //поворот кристалла
 			NumberOfRing = -1.0;
 			Body->FTforConvexCrystal(HandlerTemp);
-			if(bm_tetta>ConusRad)
+			if (bm_tetta>ConusRad)
 				gamma_end = gamma_ConusRad;
 			else
 				gamma_start = gamma_ConusRad;
 		}
 		gamma_ConusRad = (gamma_end+gamma_start)/2.0;
 
-		if(gamma_ConusRad>M_PI/6.0)
+		if (gamma_ConusRad>M_PI/6.0)
 		{
 			out << endl << '\t' << ns << " " << 30;
 			lim[ns] = M_PI/6.0; nl++; continue;
 		}
 		else
 		{
-			if(gamma_ConusRad<=FLT_EPSILON)
+			if (gamma_ConusRad<=FLT_EPSILON)
 			{
 				continue;                           // ???
 			}
@@ -808,7 +834,7 @@ uint FillLim(double ConusRad, double betta, double sc_coef, char* name)
 					gamma_end += 5.0*Rad;
 				} while((NumberOfRing<MaxNRing)&&(gamma_end<88.0*Rad)); // <88.0???
 
-				if(NumberOfRing<MaxNRing) //считаем весь диапазон
+				if (NumberOfRing<MaxNRing) //считаем весь диапазон
 					gamma_end=30.0*Rad;
 
 				//методом половинного деления ищем gamma_lim
@@ -820,31 +846,31 @@ uint FillLim(double ConusRad, double betta, double sc_coef, char* name)
 					Body->ChangePosition(betta, M_PI/6.0+gamma_lim,0.0); //поворот кристалла
 					NumberOfRing=-1.0;
 					Body->FTforConvexCrystal(HandlerTemp);
-					if(NumberOfRing>MaxNRing)
+					if (NumberOfRing>MaxNRing)
 						gamma_end = gamma_lim;
 					else
 						gamma_start = gamma_lim;
 				}
 				gamma_lim = (gamma_end+gamma_start)/2.0;
 
-				if(gamma_lim>M_PI/6.0) gamma_lim=M_PI/6.0;
+				if (gamma_lim>M_PI/6.0) gamma_lim=M_PI/6.0;
 
 				double Tgamma = gamma_ConusRad+gamma_lim*sc_coef;
-				if(Tgamma>M_PI/6.0) Tgamma=M_PI/6.0;
+				if (Tgamma>M_PI/6.0) Tgamma=M_PI/6.0;
 				lim[ns] = Tgamma; nl++;
 				out << endl << '\t' << ns << " " << Tgamma/Rad;
 			}
 		}
 	}
 
-	double copy_lim[AllowedMullerMatrixNumber];
-	for(uint i=0; i<AllowedMullerMatrixNumber; copy_lim[i]=lim[i], sort_lim[i]=0.0, i++);
-	for(int i=nl-1; i>=0; i--)
+	double copy_lim[AllowedMuellerMatrixNumber];
+	for (uint i=0; i<AllowedMuellerMatrixNumber; copy_lim[i]=lim[i], sort_lim[i]=0.0, i++);
+	for (int i=nl-1; i>=0; i--)
 	{
 		double max = -1.0;
 		int mx=0;
-		for(uint j=0; j<AllowedMullerMatrixNumber; j++)
-			if(copy_lim[j]>max) { max = copy_lim[j]; mx = j; }
+		for (uint j=0; j<AllowedMuellerMatrixNumber; j++)
+			if (copy_lim[j]>max) { max = copy_lim[j]; mx = j; }
 		sort_lim[i] = max;
 		copy_lim[mx] = -1.0;
 	}
