@@ -42,10 +42,12 @@ public:
 			r,             ///< direction of the beam in 3D space
 			T,F,N; 
 
-	Beam(void) : mt(2,2), lng(0) 
+	long int id;
+
+	Beam(void) : mt(2,2), lng(0), id(0)
 		{ this->mt.Identity(); }
 	Beam(const std::list<Point3D>& _v, double l = 0) :
-		mt(2,2), v(_v), lng(l) 
+		mt(2,2), v(_v), lng(l), id(0)
 		{ this->mt.Identity(); }
 	~Beam(void) {};
 	Beam&  operator=(const Beam& b)
@@ -63,6 +65,7 @@ public:
 		this->T = b.T;
 		this->F = b.F;
 		this->N = b.N;
+		this->id = b.id;
 		return *this;
 	}
 

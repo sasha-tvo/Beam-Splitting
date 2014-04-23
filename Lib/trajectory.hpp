@@ -23,10 +23,12 @@ class Chain {
 public:
 	std::list<unsigned int> Ch;
 	unsigned int sz;
-	Chain (const std::list<unsigned int>& _Ch) :
-		   Ch(_Ch) { sz = this->Ch.size(); };
+	long int id;
+	Chain (const std::list<unsigned int>& _Ch, long int _id) :
+		Ch(_Ch), id(_id) { sz = this->Ch.size(); };
 	virtual	~Chain() {};	
 	unsigned int  Size(void) const { return this->sz; }
+	long int ID(void) const { return this->id; }
 	std::list<unsigned int>::const_iterator  Begin(void) const
 		{ return this->Ch.begin(); }
 	std::list<unsigned int>::const_iterator  End(void) const
