@@ -271,8 +271,7 @@ int main(int argc, char* argv[])
 	if(F_Mt)
 	{
 		ofstream res("res.dat", ios::out);
-		//res << "trajectory\tenergy\n";
-		res << "trajectory\tenergy\tID\tinverse_tr\n";
+		res << "trajectory\tenergy\n";
 		list<Chain>::const_iterator c = Lbm.begin();
 		for(unsigned int is=0; c!=Lbm.end(); c++, is++)
 		{
@@ -337,21 +336,10 @@ int main(int argc, char* argv[])
 					f3 << " (" << (gmin+0.0)*NormGammaAngle/M_PI*180.0
 					   << ", " << (gmax+1.0)*NormGammaAngle/M_PI*180.0 << ")";
 			}
-		f1.close();
-		f2.close();
-		f3.close();
-		res << (tr+"//") << '\t' << sum << '\t' << c->ID();// << endl ;//"\t";
-		long int copy_id = c->ID();
-		string new_tr = "";
-		do
-		{
-			int i = copy_id%(_NoF+1)-1;
-			new_tr=to_string(i)+" "+new_tr;
-			copy_id /= (_NoF+1);
-		}
-		while (copy_id);
-		res << new_tr << endl;
-		cout << endl << new_tr;
+			f1.close();
+			f2.close();
+			f3.close();
+			res << (tr+"//") << '\t' << sum << endl;
 		}
 		res.close();
 	}
@@ -427,7 +415,7 @@ void Handler(Beam& bm)
 	}
 	if(c==Lbm.end())
 	{
-		Lbm.push_back(Chain(facets, bm.id));
+		Lbm.push_back(facets);
 		if(F_Mt)
 		{
 			matrix temp(BettaNumber, GammaNumber);
@@ -570,7 +558,7 @@ void MaskAppend(char s[])
 	while(strlen(buf)!=strlen(end));
 	if(ch.size()==0)
 		throw "Error! There was not enough trajectories in data file";
-	mask.push_back(Chain(ch,0));
+	mask.push_back(ch);
 }
 //==============================================================================
 

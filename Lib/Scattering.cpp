@@ -42,10 +42,6 @@ int Crystal::TracingOfInternalBeam ( Beam& inc_beam, unsigned int i, Hand Handle
 		Reflected.PushBackP(l);
 		Refracted.PushBackP(l);
 
-		Reflected.id = inc_beam.id;
-		Refracted.id = inc_beam.id;
-		Reflected.id *= (this->K+1); Reflected.id += (l+1);
-		Refracted.id *= (this->K+1); Refracted.id += (l+1);
 		double sqr_csa = SQR(csa),Nr = (this->mr+sqrt(SQR(this->mr)+this->mi/sqr_csa))/2.0;
 		//--------------------------------------------------------------------------
 		if(csa >= Eps2) { // case of the normal incidence
@@ -226,8 +222,6 @@ double  Crystal::FTforConvexCrystal(Hand Handler) const
 		}
 		ext_beam.PushFrontP(l);
 		int_beam.PushFrontP(l);
-		ext_beam.id = l+1;
-		int_beam.id = l+1;
 		s += AreaOfBeam(ext_beam)*csa; // equal to call of CrossSection(ext_beam)
 		ext_beam.N = n;
         Handler(ext_beam.Rotate(k,Ey)); // handling of the outgoing beam
