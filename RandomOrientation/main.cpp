@@ -1,7 +1,8 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QTime>
-#include <QtCore/QtGlobal>
+#include <QDate>
+//#include <QtCore/QtGlobal>
 
 #include <conio.h>
 #include <iostream>
@@ -39,7 +40,8 @@ double			Radius,						///< Radius of the particle
 				TipHeight,					///< Height of the tip (if AoP56 = 0)
 				P = 0.0,					///< Probability distribution for Betta angle
 				cos_angle,
-				lm;
+				lm,
+				T;							///< Max tilt angle
 Arr2D			mxd(0,0,0,0);				///< An array of output Mueller matrixes
 matrix			back(4,4),					///< Mueller matrix in backward direction
 				forw(4,4);					///< Mueller matrix in forward direction 
@@ -82,7 +84,7 @@ int main(int argc, char* argv[])
 	dir.cd(QCurDir);
 	QDir::setCurrent(dir.absolutePath());
 
-	unsigned int NumberOfParameters = 13;	///< Number of lines in data files, except trajectories
+	unsigned int NumberOfParameters = 14;	///< Number of lines in data files, except trajectories
 	double params[NumberOfParameters];		///< array of input data	
 	// read parameters from data file
 	try
@@ -108,9 +110,10 @@ int main(int argc, char* argv[])
 	_RefI =			complex(params[6],0.0);
 	cos_angle =		cos(M_PI/2.0-params[7]*M_PI/180.0);
 	GammaNumber =	params[8];
-	BettaNumber =	params[9];
-	lm =			params[10];
-	F_Mt =			params[12];
+	T =				params[9];
+	BettaNumber =	params[10];
+	lm =			params[11];
+	F_Mt =			params[13];
 	//----------------------------------------------------------------------------
 	double
 		NormAng =			sqrt(3.0)/(2.0*tan(0.48869219055841228153863341517681)),
@@ -168,22 +171,69 @@ int main(int argc, char* argv[])
 		DelFace();
 	}
 	//----------------------------------------------------------------------------
+	QDate date = QDate::currentDate();
 	QTime time = QTime::currentTime();
 	QString str = time.toString("hh_mm_ss");
 	string time_start = "\nNumerical calculations started at: "+(time.toString("hh:mm:ss")).toStdString();
 	cout << time_start;
 	clock_t t = clock();
 
-	//----------------------------------------------------------------------------
-	string fRes = "Data_"+(time.toString("hh_mm_ss")).toStdString();
-	dir.mkdir(QString::fromStdString(fRes));
-	dir.cd(QString::fromStdString(fRes));
+	QString fRes = "Data_"+date.toString("ddMMyy")+"_"+(time.toString("hhmmss"));
+	dir.mkdir(fRes);
+	dir.cd(fRes);
 	QDir::setCurrent(dir.absolutePath());
+
+	QString f_From = QCurDir+"/params.dat",
+			f_To = "copy_params.dat";
+	QFile::copy(f_From, f_To);
 
 	double s = 0, betta, gamma;
 	ofstream f("log.dat", ios::out);
+	f << (QFileInfo(QCoreApplication::applicationFilePath()).fileName()).toStdString();
 	f << time_start;
 	f.close();
+
+	uint gamma_25p = floor(0.25*GammaNumber);
+
+	//--------------------------------------------------------------------------
+	double p_Betta[BettaNumber], dcos[BettaNumber];
+	for (uint i=0; i<BettaNumber; i++)
+		p_Betta[i] = 1.0;
+
+	if (fabs(T)>FLT_EPSILON)
+	{
+		NormBettaAngle = T/double(BettaNumber)*M_PI/180.0;
+		double norm1 = 0.0, norm2 = 0.0, sigma = T/2.0*M_PI/180.;
+		for (uint i=0; i<BettaNumber; i++)
+		{
+			double betta = (i+0.5)*NormBettaAngle, h;
+			if (!i)
+				dcos[i] = 1-cos(0.5*NormBettaAngle), h = 0.5*NormBettaAngle;
+			else
+				if(i==(BettaNumber-1))
+					dcos[i] = cos(betta-0.5*NormBettaAngle)-cos(betta), h = 0.5*NormBettaAngle;
+				else
+					dcos[i] = cos(betta-0.5*NormBettaAngle)-cos(betta+0.5*NormBettaAngle), h = NormBettaAngle;
+			p_Betta[i] = exp(-betta*betta/(2.0*sigma*sigma));
+			norm1 += p_Betta[i]*dcos[i];
+			norm2 += p_Betta[i]*h;
+		}
+
+		for (uint i=0; i<BettaNumber; i++)
+			p_Betta[i] /= norm1;
+
+		ofstream f("probability.dat", ios::out);
+		f << "betta p_Betta dcos";
+		for (uint i=0; i<BettaNumber; i++)
+		{
+			double betta = (i+0.5)*NormBettaAngle;
+			f << endl << betta/M_PI*180. << " " << p_Betta[i] << " " << dcos[i];
+		}
+		f << "\nnorm = " << 1.0/(sqrt(2.0*M_PI)*sigma*180.0/M_PI)*norm2*180.0/M_PI;
+		f.close();
+
+	}
+	//--------------------------------------------------------------------------
 	try
 	{
 		for(betta_i=0; betta_i<BettaNumber; betta_i++)
@@ -195,18 +245,15 @@ int main(int argc, char* argv[])
 			{
 				gamma = (gamma_j+0.5)*NormGammaAngle;
 				Body->ChangePosition(betta, gamma, 0.0);
-				P = sin(betta);
+				P = p_Betta[betta_i]*sin(betta);
 				s += P*Body->FTforConvexCrystal(Handler);
-				if(!(gamma_j%10)) cout<<'.';
+				if(!(gamma_j%gamma_25p)) cout<<'.';
 			}
 			unsigned int size = Lbm.size();
 			ofstream f("log.dat", ios::app);
 			f << endl << betta_i << " " << betta/M_PI*180.0 << " " << size;
 			f.close();
-			if(!KoP || KoP==3)
-				cout << "\n" << (1-cos(betta)) << " (" << size << ") ";
-			else
-				cout << "\n" << (1-cos(betta))/2.0 << " (" << size << ") ";
+			cout << endl << 100.0*(betta_i+1)/(double)BettaNumber;
 		}
 	}
 	catch(char* s)
@@ -234,8 +281,8 @@ int main(int argc, char* argv[])
 			name1 = "nr"+_tr+".dat";
 			name2 = "dif"+_tr+".dat";
 			ofstream f1(name1.c_str(), ios::out), f2(name2.c_str(), ios::out);
-			f1 << name1 << endl << BettaNumber << " " << GammaNumber;
-			f2 << name2 << endl << BettaNumber << " " << GammaNumber;
+			f1 << name1 << endl << BettaNumber << " " << GammaNumber << " " << params[9];
+			f2 << name2 << endl << BettaNumber << " " << GammaNumber << " " << params[9];
 			for(unsigned int ib=0; ib<BettaNumber; ib++)
 			{
 				f1 << endl; f2 << endl;
@@ -265,7 +312,10 @@ int main(int argc, char* argv[])
 			res << (tr+"//") << '\t' << v_dif << endl;
 		}
 		res.close();
+		//----------------------------------------------------------------------
+
 	}
+
 	//--------------------------------------------------------------------------
 	delete Body;
 	t = (clock()-t)/CLK_TCK;
@@ -400,7 +450,7 @@ int ReadFile(char* name, double* params, unsigned int n)
 		case 7: _NoF = 5;  break;
 	}
 
-	Itr = params[11];
+	Itr = params[12];
 
 	if(!in.eof())
 	{
