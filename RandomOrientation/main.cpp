@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
 	for (;cm!=mask.end();cm++)
 	{
 		uint  pn = 0, sm = cm->Size();
-		//Run over list of alowed trajectories
+		//Run over list of allowed trajectories
 		for (list<Chain>::const_iterator ct = AllowedMask.begin();ct!=AllowedMask.end();ct++, pn++)
 		{
 			uint  st = ct->Size();
@@ -274,7 +274,7 @@ int main(int argc, char* argv[])
 			}
 			else
 				dcos = 1.0;
-			//dcos=1.0;
+
 
 			dcos_sum += dcos;
 			uint  NumLim = FillLim(ConusRad, bettaRad, GammaLimmExtendedCoeff, "out.dat");
@@ -289,7 +289,8 @@ int main(int argc, char* argv[])
 				if (GammaNumber)
 					dGammaRad = sort_lim[Lim]/(double)GammaNumber;
 				int Gamma_Number_to_skip=0;
-				if (Lim) Gamma_Number_to_skip = 1+floor(sort_lim[Lim-1]/dGammaRad); // GammaNumber - число "внутренних" шагов в цикле, которые нужно пропустить
+				if (Lim)
+					Gamma_Number_to_skip = 1+floor(sort_lim[Lim-1]/dGammaRad); // GammaNumber - число "внутренних" шагов в цикле, которые нужно пропустить
 				for (int Gamma_j=-GammaNumber; Gamma_j<=GammaNumber; Gamma_j++)
 				{
 					if (Lim && abs(Gamma_j)<Gamma_Number_to_skip) continue; // пропускаем внутренние шаги
@@ -500,7 +501,7 @@ void Handler(Beam& bm)
 		{
 			Nx=Point3D(bm.N.y/tmp,-bm.N.x/tmp,0);
 			Ny=bm.N%Nx;
-			Ny /= length(Ny);
+			//Ny /= length(Ny);
 		}
 		bm.SetCoefficients_abcd(bm.N, Nx, Ny, r0);
 	}
@@ -530,12 +531,14 @@ void Handler(Beam& bm)
 				Jn_rot[0][0]=-bm.F*vf; Jn_rot[0][1]= bm.T*vf;
 				Jn_rot[1][0]= bm.F*vt; Jn_rot[1][1]=-bm.T*vt;
 				fn = bm.DiffractionShiftedPr(vr, lm);
+				//fn = bm.DiffractionShifted(vr, lm);
 			}
 			else
 			{
 				Jn_rot[0][0]=-(bm.N%bm.T)*vf; Jn_rot[0][1]=-(bm.N%bm.F)*vf;
 				Jn_rot[1][0]= (bm.N%bm.T)*vt; Jn_rot[1][1]= (bm.N%bm.F)*vt;
-				fn = bm.DiffractionInclinePr(vr, lm);
+				//fn = bm.DiffractionInclinePr(vr, lm);
+				fn = bm.DiffractionIncline(vr, lm);
 			}
 			matrixC fn_jn = exp_im(m_2pi*(lng_proj0-vr*r0)/lm)*bm();
 			Jones_temp[vi].insert(i_fi,j_tt,fn*Jn_rot*fn_jn);
