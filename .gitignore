@@ -27,3 +27,4 @@ Makefile*
 # QtCreator
 
 *.autosave
+/RandomOrientation/Random.pro.user
