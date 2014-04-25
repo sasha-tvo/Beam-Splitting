@@ -52,6 +52,7 @@ vector<double>	en;
 Point3D			k(0,0,1),					///< Direction on incident wave
 				Ey(0,1,0),					///< Basis for polarization characteristic of light
 				vr, vf, vt;
+uint **Beam_Trajectories;
 
 ///< handler for the emitted beams
 void Handler(Beam& bm);
@@ -67,6 +68,91 @@ void ShowTitle(void);
 
 /// Deletes \b **Face structure
 void DelFace(void);
+
+class Otrezok
+{
+public:
+	list<int> x;
+	list<int> gm;
+
+	Otrezok(int A, int B) {x.push_back(A);x.push_back(B);gm.push_back((B-A)+100);};
+	virtual ~Otrezok(){};
+	int Push(int A,int B)
+	{
+		list<int>::iterator p1 = x.begin(), p2 = gm.begin();
+		int temp_gm;
+		if (A>=B)
+			return 2;
+		if (A<0)
+			return 3;
+		int G=B-A;
+		temp_gm=*p2;
+		while ((*p1<A) &&(p2!=gm.end()))
+		{
+			p1++;
+			temp_gm = *p2;
+			p2++;
+		}
+		if (*p1<A)
+			return 1;
+		if (A!=*p1)
+		{
+			x.insert(p1,A);
+			gm.insert(p2,(G<temp_gm?G:temp_gm));
+		}
+		else
+			*p2=(G<temp_gm?G:temp_gm);
+		while ((*p1<B) &&(p2!=gm.end()))
+		{
+			p1++;
+			temp_gm = *p2;
+			*p2 = (G<temp_gm?G:temp_gm);
+			p2++;
+		}
+		if (*p1<B)
+			return 1;
+
+		if (B!=*p1)
+		{
+			x.insert(p1,B);
+			gm.insert(p2,temp_gm);
+		}
+	return 0;
+	}
+
+	void Clear()
+	{
+		list<int>::iterator p1 = x.begin(), p2 =gm.begin();
+		int temp_gm = -1;
+		do
+		{
+			if(temp_gm==(*p2))
+			{
+				p1 = x.erase(p1);
+				p2 = gm.erase(p2);
+			}
+			else
+			{
+				temp_gm = *p2;
+				p1++;
+				p2++;
+			}
+
+		} while (p2!=gm.end());
+	}
+
+	int Size(int MaxValue)
+	{
+		int sz = 0;
+		list<int>::iterator p2 =gm.begin();
+		for(; p2!=gm.end(); p2++)
+		{
+			if((*p2)!=MaxValue)
+				sz++;
+		}
+	 return sz;
+	}
+};
 
 
 /// Main()
@@ -206,7 +292,7 @@ int main(int argc, char* argv[])
 	if (fabs(T)>FLT_EPSILON)
 	{
 		NormBettaAngle = T/double(BettaNumber)*M_PI/180.0;
-		double norm1 = 0.0, norm2 = 0.0, sigma = T/3.0*M_PI/180.;
+		double norm1 = 0.0, norm2 = 0.0, sigma = T/2.0*M_PI/180.;
 		for (uint i=0; i<BettaNumber; i++)
 		{
 			double betta = (i+0.5)*NormBettaAngle, h;
@@ -237,6 +323,15 @@ int main(int argc, char* argv[])
 
 	}
 	//--------------------------------------------------------------------------
+	Beam_Trajectories = new uint*[BettaNumber];
+	for (uint i=0; i<BettaNumber; i++)
+		Beam_Trajectories[i] = new uint[Sorting];
+
+	for (uint i=0; i<BettaNumber; i++)
+		for (uint j=0; j<Sorting; j++)
+			Beam_Trajectories[i][j] = 0;
+
+
 	try
 	{
 		for(betta_i=0; betta_i<BettaNumber; betta_i++)
@@ -270,8 +365,15 @@ int main(int argc, char* argv[])
 	//----------------------------------------------------------------------------
 	if(F_Mt)
 	{
-		ofstream res("res.dat", ios::out);
+		vector<Otrezok> Betta_otrezok;
+		Betta_otrezok.clear();
+		for (uint i=0; i<BettaNumber; i++)
+			Betta_otrezok.push_back(Otrezok(0,GammaNumber));
+
+		ofstream res("res.dat", ios::out), file_otr("GammaLim.dat", ios::out);
 		res << "trajectory\tenergy\n";
+		file_otr << Sorting;
+
 		list<Chain>::const_iterator c = Lbm.begin();
 		for(unsigned int is=0; c!=Lbm.end(); c++, is++)
 		{
@@ -291,14 +393,14 @@ int main(int argc, char* argv[])
 			f1 << name1 << endl << BettaNumber << " " << GammaNumber << " " << params[9];
 			f2 << name2 << endl << BettaNumber << " " << GammaNumber << " " << params[9];
 			f3 << "betta";
-			for(int ib=0; ib<BettaNumber; ib++)
+			for(uint ib=0; ib<BettaNumber; ib++)
 			{
 				f1 << endl;
 				f2 << endl;
 				f3 << endl << (ib+0.5)*NormBettaAngle/M_PI*180.0;
 				bool fl_min = true; // ищем начало интервала дл€ гамма_лим
 				double gmin = 0.0, gmax = 0.0;
-				int ig=0;
+				uint ig=0;
 				for (; ig<GammaNumber; ig++)
 				{
 					double	v_nc = (nc[is])[ib][ig],
@@ -310,8 +412,10 @@ int main(int argc, char* argv[])
 					{
 						if (!fl_min)
 						{
-							f3 << " (" << (gmin+0.0)*NormGammaAngle/M_PI*180.0
-							   << ", " << (gmax+1.0)*NormGammaAngle/M_PI*180.0 << ")";
+							f3 << " (" << gmin*NormGammaAngle/M_PI*180.0
+							   << ", " << (gmax+1.0)*NormGammaAngle/M_PI*180.0 << ")"
+							   <<  (gmax+1.0-gmin)*NormGammaAngle/M_PI*180.0;
+							Betta_otrezok[ib].Push(gmin, gmax+1);
 							fl_min = true;
 						}
 						else
@@ -333,15 +437,44 @@ int main(int argc, char* argv[])
 					}
 				}
 				if (ig==GammaNumber && !fl_min)
-					f3 << " (" << (gmin+0.0)*NormGammaAngle/M_PI*180.0
-					   << ", " << (gmax+1.0)*NormGammaAngle/M_PI*180.0 << ")";
+				{
+					f3 << " (" << gmin*NormGammaAngle/M_PI*180.0
+					   << ", " << (gmax+1.0)*NormGammaAngle/M_PI*180.0
+					   << ") " << (gmax+1.0-gmin)*NormGammaAngle/M_PI*180.0;
+					Betta_otrezok[ib].Push(gmin, gmax+1);
+				}
 			}
 			f1.close();
 			f2.close();
 			f3.close();
 			res << (tr+"//") << '\t' << sum << endl;
+			file_otr << endl << (tr+", //");
 		}
 		res.close();
+
+		file_otr << endl << BettaNumber << " " << GammaNumber;
+		for (uint i=0; i<BettaNumber; i++)
+		{
+			file_otr << endl << i;
+			for (uint j=0; j<Sorting; j++)
+			{
+				file_otr <<	" " << Beam_Trajectories[i][j];
+			}
+			Betta_otrezok[i].Clear();
+			list<int>::const_iterator	p1 = Betta_otrezok[i].x.begin(),
+										p1_next = p1,
+										p2 = Betta_otrezok[i].gm.begin();
+			p1_next++;
+			file_otr << " " << Betta_otrezok[i].gm.size();
+			for(; p2!=Betta_otrezok[i].gm.end(); p1++, p1_next++, p2++)
+			{
+				file_otr << " " << *p1
+						 << " " << *p1_next
+						 << " " << *p2;
+			}
+		}
+		file_otr << endl;
+		file_otr.close();
 	}
 	else
 	{
@@ -361,6 +494,11 @@ int main(int argc, char* argv[])
 	}
 	//--------------------------------------------------------------------------
 	delete Body;
+
+	for(uint i=0;i<BettaNumber; i++)
+		delete[] Beam_Trajectories[i];
+	delete[] Beam_Trajectories;
+
 	t = (clock()-t)/CLK_TCK;
 
 	ofstream g("log.dat", ios::app);
@@ -380,10 +518,12 @@ void Handler(Beam& bm)
 	for(list<unsigned int>::const_iterator b = bm.BeginP(); b!=bm.EndP(); b++)
 		facets.push_back(*b);
 
+	uint pn = 0;
+
 	if(Sorting)
 	{
 		bool flag = false;
-		for(list<Chain>::const_iterator c = mask.begin(); c!=mask.end(); c++)
+		for(list<Chain>::const_iterator c = mask.begin(); c!=mask.end(); c++, pn++)
 		{
 			list<unsigned int>::const_iterator it = c->Ch.begin(), fs = facets.begin();
 			if(SizeP(bm)!=c->Ch.size())
@@ -400,6 +540,9 @@ void Handler(Beam& bm)
 
 	if((bm.r*k)<cos_angle)
 		return;
+
+	Beam_Trajectories[betta_i][pn] = 1;
+
 	matrix m = Mueller(bm());
 
 	unsigned int nst = 0; // номер в списке
