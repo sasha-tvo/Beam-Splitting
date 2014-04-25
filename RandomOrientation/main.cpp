@@ -51,6 +51,22 @@ Point3D			k(0,0,1),					///< Direction on incident wave
 				Ey(0,1,0);					///< Basis for polarization characteristic of light
 bool			perpend_diff;				///< If true - diffraction will be calculated with Shifted screen, perpendicular to propagation direction; if false - diffraction will be calculated with incline screen
 //==============================================================================
+
+struct segment
+{
+	float A,B,Gm;
+};
+
+struct Gamma_segments
+{
+
+	float betta;
+	vector<bool> group_mask;
+	int segment_count;
+	vector<segment> segm;
+};
+
+
 const uint		NumberOfParameters = 16;		///< Number of lines in data files, except trajectories
 double			params[NumberOfParameters];		///< Array of input data
 double			NormGammaAngle = 	0,			///< Normalize coefficient for Gamma
@@ -59,9 +75,11 @@ const double	Rad = M_PI/180.;				///< Grad to Rad coefficient
 double			df = 0.0,						///< dPhi
 				dt = 0.0;						///< dTheta
 uint			MuellerMatrixNumber=0;
+Gamma_segments	CurrentSegment,PriviusSegment,NextSegment;
 
-vector<string>	names_of_groups;
-vector<matrixC>	Jones_temp;
+vector<string>			names_of_groups;
+vector<matrixC>			Jones_temp;
+list<Gamma_segments>	Map;
 
 
 
@@ -72,7 +90,7 @@ void Handler(Beam& bm);
 int ReadFile(char* name, double* params, uint n);
 
 /// Fill in the \b mask and \b **Face from data file
-void MaskAppend(const char *s);
+int MaskAppend(const char *s);
 
 /// Build Names Of Groups in \b names_of_groups by mask
 void BuildNamesOfGroups(void);
@@ -155,7 +173,7 @@ int main(int argc, char* argv[])
 			NormBettaAngle =  	M_PI/(2.0*BettaNumber);
 		break;
 		default:
-			cout << "Wring kind of particle!";
+			cout << "Wrong kind of particle!";
 			return 1;
 	}
 	//----------------------------------------------------------------------------
@@ -182,7 +200,7 @@ int main(int argc, char* argv[])
 
 	uint orn = 0;
 	cout <<endl;
-	for (int vi=0;vi<=MuellerMatrixNumber;vi++)
+	for (uint vi=0;vi<=MuellerMatrixNumber;vi++)
 	{
 		string tr=names_of_groups[vi];
 		ofstream out(("ga_"+tr+".dat").c_str(), ios::out);
@@ -191,9 +209,23 @@ int main(int argc, char* argv[])
 		out.close();
 	}
 
+	{
+		ofstream res("ga_all.dat", ios::out);
+		res << "betta M11 M12 M13 M14 M21 M22 M23 M24 M31 M32 M33 M34 M41 M42 M43 M44"<<endl;
+		res << to_string(BettaNumber) << " " << to_string(ThetaNumber) << " " << to_string(dBettaRad/Rad) << " " << to_string(dt/Rad)<<endl;
+		res.close();
+	}
+
+	list<Gamma_segments>::iterator p=Map.begin(),pp=Map.begin(),pn=Map.begin();
+	pn++;
+	//CurrentSegment=*p;
+	//PriviusSegment=*pp;
+	//NextSegment=*pn;
+
 	ofstream out("out.dat", ios::out);
 	out.close();	
 	double norm = 1.0/(M_PI/3.0);
+	//double
 	try
 	{
 		for (int Betta_i=0; Betta_i<=BettaNumber; Betta_i++)
@@ -201,14 +233,31 @@ int main(int argc, char* argv[])
 			if (!Betta_i)
 				cout << endl << "0% ";
 			double bettaRad = betta_min_Rad+(double)Betta_i*dBettaRad;
+			// do while pp.betta <bettaRad < pn.betta
+			for (;(pn->betta<bettaRad) && (pn!=Map.end());pn++,pp++);
+			if (abs(bettaRad-pn->betta)<abs(bettaRad-pp->betta))
+				CurrentSegment=*pn;
+			else
+				CurrentSegment=*pp;
+			cout <<endl << pp->betta<< " "<<CurrentSegment.betta << " " <<bettaRad<<" "<<pn->betta;
+			cout <<" "<< CurrentSegment.segment_count;
+
+			for (int gs=0; gs<CurrentSegment.segment_count;gs++)
 			{
+				double A,B,Gm,Gm_curr;
+				int steps=0;
+				A=CurrentSegment.segm[gs].A;
+				B=CurrentSegment.segm[gs].B;
+				Gm=CurrentSegment.segm[gs].Gm;
+				steps=(B-A)/Gm;
+				if (steps==0) steps=1;
+				Gm_curr= (B-A)/steps;
 				cout << ". ";
-				dGammaRad=M_PI/6.0/(double)GammaNumber;
-				gamma_cnt=0;
-				for (int Gamma_j=-GammaNumber; Gamma_j<=GammaNumber; Gamma_j++)
-				{
-					double gamma = gamma_cnt+Gamma_j*dGammaRad,
-						   Pgamma = dGammaRad;
+				double gamma=A+Gm_curr*0.5;
+				double Pgamma = Gm_curr;
+				for (int st=0;  st<steps; st++)
+				{					
+					//cout << " "<<gamma/Rad;
 					Body->ChangePosition(bettaRad, gamma, 0);
 					Jones_temp.clear();
 					matrixC tmp_(2,2);
@@ -219,24 +268,30 @@ int main(int argc, char* argv[])
 					for (uint q=0; q<=MuellerMatrixNumber; q++)
 					{
 						matrix m_tmp = Mueller(Jones_temp[q]);
-						M[q]=Pgamma*norm*m_tmp;
+						M[q]+=Pgamma*norm*m_tmp;
 					}
+					gamma = gamma+Gm_curr;
 				}
+
 			}
 			orn++;
+			cout <<endl;
 			cout <<"\r                        \r";
 			cout << (orn*100./(BettaNumber+1))<<"%"<<" ";
 
 			//------------------
+			matrix m_tot(4,4);
+			m_tot.Fill(0);
 
 			for (uint q=0; q<=MuellerMatrixNumber; q++)
 			{
 				string tr;
 				tr=names_of_groups[q];
+				if (tr!="")
 				{
 					ofstream res(("ga_"+tr+".dat").c_str(), ios::app);
 					res.precision(10);
-					matrix m = M[q];
+					matrix m = M[q];					
 					double tt1,tt2;
 					tt1=m[1][1];
 					tt2=m[2][2];
@@ -249,9 +304,17 @@ int main(int argc, char* argv[])
 					res <<" "<< Betta_i << " ";
 					res << m;
 					res << endl;
+					m_tot+=m;
 					res.close();
 				}
 			}
+			ofstream res("ga_all.dat", ios::app);
+			res.precision(10);
+			res <<" "<< Betta_i << " ";
+			res << m_tot;
+			res << endl;
+			res.close();
+
 			//---------------
 		}
 	}
@@ -278,8 +341,8 @@ int main(int argc, char* argv[])
 
 void Handler(Beam& bm)
 {
-	uint  pn = 0, szP = SizeP(bm);
-	uint  vi=0;
+	uint szP = SizeP(bm);
+	uint vi=0;
 	if (NumberOfTrajectory)
 	{
 		// поиск - нужно ли учитывать пучок с данной траекторией?
@@ -303,6 +366,7 @@ void Handler(Beam& bm)
 	}
 	else
 		throw " No one trajectory!";
+	if (!CurrentSegment.group_mask[vi]) return;
 
 	double ctetta = bm.r*k;
 
@@ -380,14 +444,84 @@ int ReadFile(char* name, double* params, uint n)
 		for (uint i=0;i<params[9]+1;i++)
 			for (uint j=0;j<_NoF;j++)
 				Face[i][j] = 0;
+		vector<int> tr_to_group;
 
 		for (uint j=0;j<NumberOfTrajectory;j++)
 		{
 			if (map_f.eof()) return 1;
 			map_f.getline(buf, size);
-			MaskAppend(buf);
+			tr_to_group.push_back(MaskAppend(buf));
 		}
 		BuildNamesOfGroups();
+
+		//-------------------
+		int bt_c,gm_c;
+		float bt_max_rad,gm_min_rad,gm_max_rad,dbt_rad,dgm_rad;
+		map_f >>bt_c>>gm_c>>bt_max_rad>>gm_min_rad>>gm_max_rad;
+		bt_max_rad*=Rad;
+		gm_min_rad*=Rad;
+		gm_max_rad*=Rad;
+		dbt_rad=bt_max_rad/((float)bt_c);
+		dgm_rad=(gm_max_rad-gm_min_rad)/(float)gm_c;
+		for (uint i=0;i<bt_c;i++)
+		{
+			int t;
+			segment seg;
+			Gamma_segments gm_seg;
+			map_f >>t;
+			gm_seg.betta=((float)t+0.5)*dbt_rad;
+			for (uint j=0; j<MuellerMatrixNumber;j++)
+			{
+				gm_seg.group_mask.push_back(false);
+			}
+			for (uint j=0; j<NumberOfTrajectory;j++)
+			{
+				map_f>>t;
+				if (t>0) gm_seg.group_mask[tr_to_group[j]]=true;
+			}
+			int seg_count;
+			map_f >>seg_count;
+			gm_seg.segment_count=0;
+			for (uint j=0;j<seg_count;j++)
+			{
+				float A,B,Gm;
+				map_f >>A >>B>>Gm;
+				if (Gm<gm_c+50)
+				{
+					seg.A=A*dgm_rad+gm_min_rad;
+					seg.B=B*dgm_rad+gm_min_rad;
+					seg.Gm=Gm*dgm_rad/params[8];
+					gm_seg.segm.push_back(seg);
+					gm_seg.segment_count++;
+				}
+			}
+			Map.push_back(gm_seg);
+		}
+/*
+		vector<Gamma_segments>::iterator p=Map.begin();
+		for (;p!=Map.end();p++)
+		{
+			Gamma_segments gm_seg=*p;
+			cout <<endl<< gm_seg.betta << " ";
+			for (uint j=0; j<NumberOfTrajectory;j++)
+			{
+				cout << gm_seg.group_mask[tr_to_group[j]] << " ";
+			}
+			for (uint j=0;j<gm_seg.segment_count;j++)
+				cout<< gm_seg.segm[j].A<<" " << gm_seg.segm[j].B<<" "<< gm_seg.segm[j].Gm<<" ";
+
+			cout <<endl;
+		}
+		throw "Done";
+*/
+
+
+
+
+		//-------------------
+
+
+
 	}
 
 	map_f.close();
@@ -395,7 +529,7 @@ int ReadFile(char* name, double* params, uint n)
 }
 
 
-void MaskAppend(const char *s)
+int MaskAppend(const char *s)
 {
 	list<uint> ch;
 	uint intern_numb = 0;
@@ -417,15 +551,16 @@ void MaskAppend(const char *s)
 	buf++;
 	int facet_group=strtol(buf,&end,10);
 	if (strlen(buf)==strlen(end)) throw "Error! there is no group for a trajectory";
-	if (facet_group>MuellerMatrixNumber) MuellerMatrixNumber=facet_group;
+	if (facet_group>(int)MuellerMatrixNumber) MuellerMatrixNumber=facet_group;
 	if (ch.size()==0) throw "Error! There was not enough symbols in a trajectory in data file";
 
 	mask.push_back(Chain(ch,facet_group));
+	return facet_group;
 }
 
 void BuildNamesOfGroups()
 {
-	for (int i=0;i<=MuellerMatrixNumber;i++)
+	for (uint i=0;i<=MuellerMatrixNumber;i++)
 	{
 		string name="";
 		list<Chain>::const_iterator c = mask.begin();
@@ -438,7 +573,6 @@ void BuildNamesOfGroups()
 				name+='-';
 			}
 		names_of_groups.push_back(name);
-
 	}
 }
 
@@ -458,6 +592,7 @@ void ShowTitle(void)
 		 \n Light Scattering by Nonspherical Particles.                 \
 		 \n (c)Group of Wave Dispersion Theory,                    \
 		 \n    Institute of Atmospheric Optics RAS, Tomsk, Russia, 2014 \
+		 \n GNU GPL v.2 http://www.gnu.org/licenses/old-licenses/gpl-2.0.html \
 		 \n*************************************************************";
 }
 
