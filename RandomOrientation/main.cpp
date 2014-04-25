@@ -45,8 +45,8 @@ double			Radius,						///< Radius of the particle
 Arr2D			mxd(0,0,0,0);				///< An array of output Mueller matrixes
 matrix			back(4,4),					///< Mueller matrix in backward direction
 				forw(4,4);					///< Mueller matrix in forward direction 
-list<Chain>	mask,							///< List of trajectories to take into account
-			Lbm;
+list<Chain>	mask;							///< List of trajectories to take into account
+vector<Chain> Lbm;
 vector<matrix>	nc,
 				dif;
 vector<double>	en;
@@ -68,6 +68,51 @@ void ShowTitle(void);
 /// Deletes \b **Face structure
 void DelFace(void);
 
+//------------------------------------------------------------------------------
+int NumMaxEnergy(vector<double> a)
+{
+	uint sz = a.size();
+	if(sz==0)
+		return -1; // список пустой
+	int max_i = 0;
+	double max_val = a[0];
+	for(uint i=1; i<sz; i++)
+	{
+		if(a[i]>max_val)
+		{
+			max_i = i;
+			max_val = a[i];
+		}
+	}
+	return max_i;
+}
+
+int PoiskVzTrajectory(Chain A, vector<Chain> B)
+{
+	uint sza = A.Size(), szb = B.size();
+	if(szb==0)
+		return -1;  // список пустой
+	int num = -1;   // номер в списке
+	for(uint i=0; i<szb; i++)
+	{
+		if(sza!=B[i].Size())
+			continue;
+		else
+		{
+			list<uint>::const_iterator a = A.Begin(), b = B[i].End();
+			b--;
+			for(; a!=A.End() && (*a)==(*b); a++, b--);
+			if(a==A.End())
+			{
+				num = i;
+				break;
+			}
+		}
+	}
+	return num;
+}
+
+//------------------------------------------------------------------------------
 
 /// Main()
 int main(int argc, char* argv[])
@@ -100,7 +145,7 @@ int main(int argc, char* argv[])
 		cout << endl << s << "\nPress any key.";
 		getch(); return 1;
 	}
-	//---------------------------------------------------------------------------
+
 	KoP =			params[0];
 	AoP56 =			params[1];
 	Radius =		params[2];
@@ -266,9 +311,10 @@ int main(int argc, char* argv[])
 	//----------------------------------------------------------------------------
 	if(F_Mt)
 	{
+		en.clear();
 		ofstream res("res.dat", ios::out);
 		res << "trajectory\tenergy\n";
-		list<Chain>::const_iterator c = Lbm.begin();
+		vector<Chain>::const_iterator c = Lbm.begin();
 		for(unsigned int is=0; c!=Lbm.end(); c++, is++)
 		{
 			double sum = 0.0;
@@ -295,6 +341,7 @@ int main(int argc, char* argv[])
 			}
 			f1.close(); f2.close();
 			res << (tr+"//") << '\t' << sum << endl;
+			en.push_back(sum);
 		}
 		res.close();
 	}
@@ -302,20 +349,54 @@ int main(int argc, char* argv[])
 	{
 		ofstream res("res.dat", ios::out);
 		res << "trajectory\tenergy\n";
-		list<Chain>::const_iterator c = Lbm.begin();
+		vector<Chain>::const_iterator c = Lbm.begin();
 		for(unsigned int is=0; c!=Lbm.end(); c++, is++)
 		{
 			string tr = "";
 			for(list<unsigned int>::const_iterator it = c->Ch.begin(); it!=c->Ch.end(); it++)
 				tr += " "+to_string(*it);
-			double v_dif = en[is]/NRM;
-			res << (tr+"//") << '\t' << v_dif << endl;
+			en[is] /= NRM;
+			res << (tr+"//") << '\t' << en[is] << endl;
 		}
 		res.close();
-		//----------------------------------------------------------------------
 
 	}
-
+	//--------------------------------------------------------------------------
+	ofstream sort_res("sort.dat", ios::out);
+	sort_res << "trajectory\tenergy\tnum" << endl;
+	// ищем 50 траекторий с максимальным вкладом + их взаимные траектории(если есть)
+	int i = 0;
+	do
+	{
+		int imax = NumMaxEnergy(en);
+		if(imax==-1)
+			break;
+		Chain A = Lbm[imax];
+		// записываем траекторию с max-вкладом в файл
+		for(list<unsigned int>::const_iterator it = A.Begin(); it!=A.End(); it++)
+			sort_res << " " << to_string(*it);
+		sort_res << "//\t" << en[imax] << "\t" << i << endl;
+		vector<Chain>::iterator _l = Lbm.begin();
+		vector<double>::iterator _e = en.begin();
+		advance(_l,imax); Lbm.erase(_l);   // удаляем из списков траекторию с max-вкладом
+		advance(_e,imax); en.erase(_e);
+		int ivz = PoiskVzTrajectory(A, Lbm); // ищем номер взаимной траектории
+		if(ivz>=0)
+		{
+			Chain B = Lbm[ivz];
+			// записываем траекторию с max-вкладом в файл
+			for(list<unsigned int>::const_iterator it = B.Begin(); it!=B.End(); it++)
+				sort_res << " " << to_string(*it);
+			sort_res << "//\t" << en[ivz] << "\t" << i << endl;
+			_l = Lbm.begin();
+			_e = en.begin();
+			advance(_l,ivz); Lbm.erase(_l);   // удаляем из списков взаимную траекторию
+			advance(_e,ivz); en.erase(_e);
+		}
+		i++;
+	}
+	while(!Lbm.empty());
+	sort_res.close();
 	//--------------------------------------------------------------------------
 	delete Body;
 	t = (clock()-t)/CLK_TCK;
@@ -360,7 +441,7 @@ void Handler(Beam& bm)
 	matrix m = Mueller(bm());
 
 	unsigned int nst = 0; // номер в списке
-	list<Chain>::const_iterator c = Lbm.begin();
+	vector<Chain>::iterator c = Lbm.begin();
 	for(; c!=Lbm.end(); c++, nst++)
 	{
 		list<unsigned int>::const_iterator it = c->Ch.begin(), fs = facets.begin();
