@@ -101,7 +101,13 @@ public:
 			gm.insert(p2,(G<temp_gm?G:temp_gm));
 		}
 		else
+		{
+			temp_gm=*p2;
 			*p2=(G<temp_gm?G:temp_gm);
+			p2++;
+			p1++;
+		}
+
 		while ((*p1<B) &&(p2!=gm.end()))
 		{
 			p1++;
@@ -154,6 +160,74 @@ public:
 	}
 };
 
+//------------------------------------------------------------------------------
+int NumMaxEnergy(vector<double> a)
+{
+	uint sz = a.size();
+	if(sz==0)
+		return -1; // список пустой
+	int max_i = 0;
+	double max_val = a[0];
+	for(uint i=1; i<sz; i++)
+	{
+		if(a[i]>max_val)
+		{
+			max_i = i;
+			max_val = a[i];
+		}
+	}
+	return max_i;
+}
+
+int PoiskVzTrajectory(Chain A, vector<Chain> B)
+{
+	uint sza = A.Size(), szb = B.size();
+	if(szb==0)
+		return -1;  // список пустой
+	int num = -1;   // номер в списке
+	for(uint i=0; i<szb; i++)
+	{
+		if(sza!=B[i].Size())
+			continue;
+		else
+		{
+			list<uint>::const_iterator a = A.Begin(), b = B[i].End();
+			b--;
+			for(; a!=A.End() && (*a)==(*b); a++, b--);
+			if(a==A.End())
+			{
+				num = i;
+				break;
+			}
+		}
+	}
+	return num;
+}
+
+int PoiskTrajectory(Chain A, list<Chain> B)
+{
+	uint sza = A.Size(), szb = B.size();
+	if(szb==0)
+		return -1;  // список пустой
+	int num = -1, i=0;   // номер в списке
+	for(list<Chain>::const_iterator b = B.begin(); b!=B.end(); b++, i++)
+	{
+		if(sza!=b->Size())
+			continue;
+		else
+		{
+			list<uint>::const_iterator a = A.Begin(), _b = b->Ch.begin();
+			for(; a!=A.End() && (*a)==(*_b); a++, _b++);
+			if(a==A.End())
+			{
+				num = i;
+				break;
+			}
+		}
+	}
+	return num;
+}
+//------------------------------------------------------------------------------
 
 /// Main()
 int main(int argc, char* argv[])
@@ -255,6 +329,10 @@ int main(int argc, char* argv[])
 			for(unsigned int j=0; j<_NoF; j++)
 				Body->Facets[i][j]=Face[i][j];
 		DelFace();
+	}
+	else {
+		cout << "\nError! Incorrect input file (params[14]==0). Press any key for exit.";
+		return 1;
 	}
 
 	vr = k;
@@ -370,10 +448,10 @@ int main(int argc, char* argv[])
 		for (uint i=0; i<BettaNumber; i++)
 			Betta_otrezok.push_back(Otrezok(0,GammaNumber));
 
-		ofstream res("res.dat", ios::out), file_otr("GammaLim.dat", ios::out);
+		ofstream res("res.dat", ios::out), file_otr("map.dat", ios::out);
 		res << "trajectory\tenergy\n";
-		file_otr << Sorting;
 
+		en.clear();
 		list<Chain>::const_iterator c = Lbm.begin();
 		for(unsigned int is=0; c!=Lbm.end(); c++, is++)
 		{
@@ -397,7 +475,7 @@ int main(int argc, char* argv[])
 			{
 				f1 << endl;
 				f2 << endl;
-				f3 << endl << (ib+0.5)*NormBettaAngle/M_PI*180.0;
+				f3 << endl <<ib;// (ib+0.5)*NormBettaAngle/M_PI*180.0;
 				bool fl_min = true; // ищем начало интервала для гамма_лим
 				double gmin = 0.0, gmax = 0.0;
 				uint ig=0;
@@ -412,9 +490,9 @@ int main(int argc, char* argv[])
 					{
 						if (!fl_min)
 						{
-							f3 << " (" << gmin*NormGammaAngle/M_PI*180.0
-							   << ", " << (gmax+1.0)*NormGammaAngle/M_PI*180.0 << ")"
-							   <<  (gmax+1.0-gmin)*NormGammaAngle/M_PI*180.0;
+							f3 << " (" << gmin//*NormGammaAngle/M_PI*180.0
+							   << ", " << (gmax+1.0)//*NormGammaAngle/M_PI*180.0 << ")"
+							   << ") " << (gmax+1.0-gmin);//*NormGammaAngle/M_PI*180.0;
 							Betta_otrezok[ib].Push(gmin, gmax+1);
 							fl_min = true;
 						}
@@ -438,9 +516,9 @@ int main(int argc, char* argv[])
 				}
 				if (ig==GammaNumber && !fl_min)
 				{
-					f3 << " (" << gmin*NormGammaAngle/M_PI*180.0
-					   << ", " << (gmax+1.0)*NormGammaAngle/M_PI*180.0
-					   << ") " << (gmax+1.0-gmin)*NormGammaAngle/M_PI*180.0;
+					f3 << " (" << gmin//*NormGammaAngle/M_PI*180.0
+					   << ", " << (gmax+1.0)//*NormGammaAngle/M_PI*180.0
+					   << ") " << (gmax+1.0-gmin);//*NormGammaAngle/M_PI*180.0;
 					Betta_otrezok[ib].Push(gmin, gmax+1);
 				}
 			}
@@ -448,11 +526,69 @@ int main(int argc, char* argv[])
 			f2.close();
 			f3.close();
 			res << (tr+"//") << '\t' << sum << endl;
-			file_otr << endl << (tr+", //");
+			en.push_back(sum);
 		}
 		res.close();
+		//----------------------------------------------------------------------
+		file_otr << Sorting << endl;
+		vector<Chain> copy_Lbm;
+		copy_Lbm.clear();
+		vector<double> copy_en = en;
+		vector<int> num;
 
-		file_otr << endl << BettaNumber << " " << GammaNumber;
+		for(list<Chain>::const_iterator l = Lbm.begin(); l!=Lbm.end(); l++)
+			copy_Lbm.push_back(*l);
+
+		num.clear();
+		for(list<Chain>::const_iterator l = mask.begin(); l!=mask.end(); l++)
+			num.push_back(-1);
+
+
+		int i = 0;
+		do
+		{
+			int imax = NumMaxEnergy(copy_en);
+			if(imax==-1)
+				break;
+			Chain A = copy_Lbm[imax];
+			int id = PoiskTrajectory(A,mask);
+			num[id] = i;
+			vector<Chain>::iterator _l = copy_Lbm.begin();
+			vector<double>::iterator _e = copy_en.begin();
+			advance(_l,imax); copy_Lbm.erase(_l);   // удаляем из списков траекторию с max-вкладом
+			advance(_e,imax); copy_en.erase(_e);
+			int ivz = PoiskVzTrajectory(A, copy_Lbm); // ищем номер взаимной траектории
+			if(ivz>=0)
+			{
+				Chain B = copy_Lbm[ivz];
+				int id = PoiskTrajectory(B,mask);
+				num[id] = i;
+				_l = copy_Lbm.begin();
+				_e = copy_en.begin();
+				advance(_l,ivz); copy_Lbm.erase(_l);   // удаляем из списков взаимную траекторию
+				advance(_e,ivz); copy_en.erase(_e);
+			}
+			i++;
+		}
+		while(!copy_Lbm.empty());
+
+		// записываем траекторию с max-вкладом в файл
+		int inum = 0;
+		for(list<Chain>::const_iterator l = mask.begin(); l!=mask.end(); l++, inum++)
+		{
+			for(list<unsigned int>::const_iterator it = l->Ch.begin(); it!=l->Ch.end(); it++)
+				file_otr << " " << to_string(*it);
+			file_otr << "; " << num[inum] << " // " << inum << endl;
+		}
+		//----------------------------------------------------------------------
+
+		file_otr << BettaNumber << " " << GammaNumber;
+
+		if(fabs(T)>FLT_EPSILON)
+			file_otr << " " << T << " " << "0 60";
+		else
+			file_otr << " 90 0 60";
+
 		for (uint i=0; i<BettaNumber; i++)
 		{
 			file_otr << endl << i;
@@ -538,8 +674,8 @@ void Handler(Beam& bm)
 		if(!flag) return;
 	}
 
-	if((bm.r*k)<cos_angle)
-		return;
+	//if((bm.r*k)<cos_angle)
+	//	return;
 
 	Beam_Trajectories[betta_i][pn] = 1;
 

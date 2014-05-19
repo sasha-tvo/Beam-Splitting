@@ -8,7 +8,7 @@ QT       += core
 
 QT       -= gui
   bnvbnvbnvbnvbnv
-TARGET = RandomEstimation
+TARGET = RandomEstimationNew
 CONFIG   += console
 CONFIG   -= app_bundle
 
