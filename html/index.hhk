@@ -8,6 +8,7 @@
   <LI><OBJECT type="text/sitemap"><param name="Local" value="main_8cpp.html#a849fe87d3fe00b53528da1c04534aa3c"><param name="Name" value="_NoF"></OBJECT>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="class_node.html#af99fb18a2efd701595917f32314fb73d"><param name="Name" value="_prev"></OBJECT>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="main_8cpp.html#a03db84a549e074855557a298df40b973"><param name="Name" value="_RefI"></OBJECT>
+  <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a5eb81dbc2db7f0ebcbf88768c1397b62"><param name="Name" value="ab"></OBJECT>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="classcomplex.html#a1e67bbbe3bc1fe0caa07f79e21c8bfe4"><param name="Name" value="abs"></OBJECT>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="service_8hpp.html#acc8fa5e7aa8dda66e981d10d87cc2ce3"><param name="Name" value="ABS"></OBJECT>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="group__geomstruct.html#gga99f26e6ee9fcd62f75203b5402df8098a3f22c6d252858ccec2adb3655b7d2dfa"><param name="Name" value="ACCORDANT"></OBJECT>
@@ -97,15 +98,21 @@
   </UL>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html"><param name="Name" value="Beam"></OBJECT>
   <UL>
+    <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a5eb81dbc2db7f0ebcbf88768c1397b62"><param name="Name" value="ab"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a94587e43fcad534f4d5fb4f2b2863e89"><param name="Name" value="AreaOfBeam"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#adae61cc6025e78f64de9a3905e348454"><param name="Name" value="Beam"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a43e4f0f9235e94a6e53fc3a5d3dfdf39"><param name="Name" value="Begin"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#ae7cabaf6f67e1f4b9b3c0537dd807ae7"><param name="Name" value="BeginP"></OBJECT>
+    <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a347012e30ae17afb21fafe9d69cd29c9"><param name="Name" value="cd"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a7cffdece8f6cca1a05700e837b274487"><param name="Name" value="CenterOfBeam"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#ac18b7f524b8ea54319af49b0e75142cd"><param name="Name" value="Clear"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a103ec0eb7f0a5b99cd4fc75ac9337bce"><param name="Name" value="ClearPr"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a3834faf484d26b7e255fe4de93407a0e"><param name="Name" value="CrossSection"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a98851e57137d162d08b283ff759b2a97"><param name="Name" value="D"></OBJECT>
+    <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a2d961f663037c34b603eebab0e3007d0"><param name="Name" value="DiffractionIncline"></OBJECT>
+    <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a1d934482d59df0596c9c131fb0d77c95"><param name="Name" value="DiffractionInclinePr"></OBJECT>
+    <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#ac27c09ec878678c824fb431ac0bda60c"><param name="Name" value="DiffractionShifted"></OBJECT>
+    <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#aeab52dd59d3388844d54a8f709654a10"><param name="Name" value="DiffractionShiftedPr"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#ade2d828589f214cc25af43206416393b"><param name="Name" value="e"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#ae0bc8daf2b20675df2b99d61311a8cac"><param name="Name" value="End"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a01db8ce4e2b6f733ddb9f86b4460c208"><param name="Name" value="EndP"></OBJECT>
@@ -129,6 +136,7 @@
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a412c14af0b8eef7f8b8694b2006c34ce"><param name="Name" value="Rot"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a02e4f12058c4543df6a3b5a33c15f41f"><param name="Name" value="Rotate"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#ac0da7147ef1655a5487b8984ab777c70"><param name="Name" value="RotatePlane"></OBJECT>
+    <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#aec7d9a689f380045712e3630615816cb"><param name="Name" value="SetCoefficients_abcd"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#ab7bf2477a94dc0d4268444e0abbfec85"><param name="Name" value="Size"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#adb236d1ce849ccf3ccf4edd4416e950f"><param name="Name" value="SizeP"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a99a071f04524c7d8f99633211dd79b46"><param name="Name" value="Spherical"></OBJECT>
@@ -143,7 +151,7 @@
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam_splitting.html#aee0b1d861b8174466de4b3c87b69453d"><param name="Name" value="d"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam_splitting.html#a98f744dd3b7891604e9c8ecad31d8846"><param name="Name" value="Ep"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam_splitting.html#a2f4c8359b094c42e6dec5f0c7d08569d"><param name="Name" value="Ey"></OBJECT>
-    <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam_splitting.html#a501e605a1c4d66ff8f1e2079e2cd2d8a"><param name="Name" value="Facets"></OBJECT>
+    <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam_splitting.html#a6606ec0292151c801624986bd16e38d3"><param name="Name" value="Facets"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam_splitting.html#a3aa9abcd451d17c2294aedb896003f76"><param name="Name" value="Itr"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam_splitting.html#a30ff1718745251ba4640243db464f090"><param name="Name" value="k"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam_splitting.html#a7396345dd543725332a66a5a30d71c51"><param name="Name" value="NoF"></OBJECT>
@@ -186,6 +194,7 @@
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_polyg.html#a6a46d641107e3cc8fef63f4e7c03156e"><param name="Name" value="Polyg"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_vertex.html#aa52a6f30f285a8c082008d0bfaeb6529"><param name="Name" value="Vertex"></OBJECT>
   </UL>
+  <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a347012e30ae17afb21fafe9d69cd29c9"><param name="Name" value="cd"></OBJECT>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a7cffdece8f6cca1a05700e837b274487"><param name="Name" value="CenterOfBeam"></OBJECT>
   <UL>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a7cffdece8f6cca1a05700e837b274487"><param name="Name" value="Beam"></OBJECT>
@@ -343,6 +352,10 @@
   <LI><OBJECT type="text/sitemap"><param name="Local" value="main_8cpp.html#a8537e2aff0427823a09c687ae56a3c33"><param name="Name" value="DelFace"></OBJECT>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="class_edge.html#a895c5a0cd1af79689758ee5adb5f9feb"><param name="Name" value="dest"></OBJECT>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="group__geomstruct.html#gga7130b1618285588513fd1ff97884b9d9a22f853bba9ebb23d90508dc6496b746c"><param name="Name" value="DESTINATION"></OBJECT>
+  <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a2d961f663037c34b603eebab0e3007d0"><param name="Name" value="DiffractionIncline"></OBJECT>
+  <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a1d934482d59df0596c9c131fb0d77c95"><param name="Name" value="DiffractionInclinePr"></OBJECT>
+  <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#ac27c09ec878678c824fb431ac0bda60c"><param name="Name" value="DiffractionShifted"></OBJECT>
+  <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#aeab52dd59d3388844d54a8f709654a10"><param name="Name" value="DiffractionShiftedPr"></OBJECT>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="class_point2_d.html#a243066739bdfca6ce62c81f647cdaf52"><param name="Name" value="dist"></OBJECT>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="class_point2_d.html#af07b7abadf0c42904ca93735a967066f"><param name="Name" value="distance"></OBJECT>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="class_dodecahedron.html"><param name="Name" value="Dodecahedron"></OBJECT>
@@ -418,7 +431,7 @@
   <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#a5ddc111b7c7d205b7f257edda7c386dd"><param name="Name" value="F"></OBJECT>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="main_8cpp.html#ab3b9b6e5a1f38601a47ab038dfaafad6"><param name="Name" value="Face"></OBJECT>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="class_crystal.html#ac5bd75721415e986369a09059c189a13"><param name="Name" value="Facet"></OBJECT>
-  <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam_splitting.html#a501e605a1c4d66ff8f1e2079e2cd2d8a"><param name="Name" value="Facets"></OBJECT>
+  <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam_splitting.html#a6606ec0292151c801624986bd16e38d3"><param name="Name" value="Facets"></OBJECT>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="_geometry_8cpp.html#ab666d40d28e3670ba54133e22cdde295"><param name="Name" value="FastPolygonIntersect"></OBJECT>
   <UL>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="_geometry_8cpp.html#ab666d40d28e3670ba54133e22cdde295"><param name="Name" value="Geometry.cpp"></OBJECT>
@@ -971,7 +984,7 @@
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_point3_d.html#af0fae6655765f72e70ee87e35aecb45c"><param name="Name" value="operator/="></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_point3_d.html#a0fa80c318c3464d20cc96496bae622e9"><param name="Name" value="operator=="></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_point3_d.html#a7108570fe637d8217ddc7c767625bfaa"><param name="Name" value="Point3D"></OBJECT>
-    <LI><OBJECT type="text/sitemap"><param name="Local" value="class_point3_d.html#ab732f7f34cb12e7566c06652b1df8dbd"><param name="Name" value="Proj"></OBJECT>
+    <LI><OBJECT type="text/sitemap"><param name="Local" value="class_point3_d.html#a5f7eb354a6bd94edc60cfc707261cd67"><param name="Name" value="Proj"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_point3_d.html#af18048148ddaf689fb75b8680ad7f6ec"><param name="Name" value="rotate"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_point3_d.html#a61f0ce0a3125919d5d1bdf1fd6b786bd"><param name="Name" value="rotateAxisY"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_point3_d.html#a5687417eebed8ad049193b4566fa4d79"><param name="Name" value="rotateAxisZ"></OBJECT>
@@ -1036,7 +1049,7 @@
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_prism.html#ab0a69e46acf4f38b866750a26cff46eb"><param name="Name" value="SetVertices"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_prism.html#acbc7bc10f5c1058200e9b374c9d7ab29"><param name="Name" value="~Prism"></OBJECT>
   </UL>
-  <LI><OBJECT type="text/sitemap"><param name="Local" value="class_point3_d.html#ab732f7f34cb12e7566c06652b1df8dbd"><param name="Name" value="Proj"></OBJECT>
+  <LI><OBJECT type="text/sitemap"><param name="Local" value="class_point3_d.html#a5f7eb354a6bd94edc60cfc707261cd67"><param name="Name" value="Proj"></OBJECT>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#aec1d0a99ebe9e8105f1c2219c1760ea2"><param name="Name" value="Proj_Vertex"></OBJECT>
   <UL>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#aec1d0a99ebe9e8105f1c2219c1760ea2"><param name="Name" value="Beam"></OBJECT>
@@ -1139,6 +1152,7 @@
     <LI><OBJECT type="text/sitemap"><param name="Local" value="service_8hpp.html#a326c724913d3f080754a57ebe3892581"><param name="Name" value="SQR"></OBJECT>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="service_8hpp.html#af94e4e21ed04253852b7d127965b5801"><param name="Name" value="SWAP"></OBJECT>
   </UL>
+  <LI><OBJECT type="text/sitemap"><param name="Local" value="class_beam.html#aec7d9a689f380045712e3630615816cb"><param name="Name" value="SetCoefficients_abcd"></OBJECT>
   <LI><OBJECT type="text/sitemap"><param name="Local" value="class_bullet.html#ae51e6fd73b9718975cb32e2d8ff9d09d"><param name="Name" value="SetFacets"></OBJECT>
   <UL>
     <LI><OBJECT type="text/sitemap"><param name="Local" value="class_bullet.html#ae51e6fd73b9718975cb32e2d8ff9d09d"><param name="Name" value="Bullet"></OBJECT>
