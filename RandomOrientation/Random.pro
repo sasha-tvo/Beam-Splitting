@@ -15,6 +15,9 @@ CONFIG   -= app_bundle
 TEMPLATE = app
 QMAKE_CXXFLAGS += -std=gnu++11
 
+QMAKE_CFLAGS += -march=corei7-avx -mtune=corei7-avx
+QMAKE_CXXFLAGS += -march=corei7-avx -mtune=corei7-avx -mavx
+
 SOURCES += main.cpp \
     ../Lib/PhysMtr.cpp \
     ../Lib/matrix.cpp \

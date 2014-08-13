@@ -407,7 +407,7 @@ int main(int argc, char* argv[])
 	_out << "\n\nTotal time of calculation = " << tm/CLK_TCK << " seconds";
 	_out.close();
 	//----------------------------------------------------------------------------
-	cout << "\n\nTotal time of calculation = " << tm/CLK_TCK << " seconds";
+	cout << "\n\nTotal time of calculation = " << tm<< " seconds";
 	cout << "\nAll done. Please, press any key.";
 	getch();
 
