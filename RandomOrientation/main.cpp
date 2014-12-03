@@ -291,7 +291,9 @@ int main(int argc, char* argv[])
 				{
 					ofstream res(("ga_"+tr+".dat").c_str(), ios::app);
 					res.precision(10);
-					matrix m = M[q];					
+					matrix m = M[q];
+					M[q].Fill(0);
+
 					double tt1,tt2;
 					tt1=m[1][1];
 					tt2=m[2][2];
