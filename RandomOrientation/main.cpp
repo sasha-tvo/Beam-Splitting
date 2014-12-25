@@ -285,9 +285,10 @@ int main(int argc, char* argv[])
 	{ // choosing the kind of the particle
 		case 0: // the hexagonal prizm
 			Body= new Prism(_RefI, Radius, Halh_Height, Itr, k, Ey);
-			NormGammaAngle =	M_PI/(3.0*GammaNumber);
-			NormBettaAngle =	M_PI/(2.0*BettaNumber);
+			NormGammaAngle = M_PI/(3.0*GammaNumber);
+			NormBettaAngle = M_PI/(2.0*(BettaNumber-1));
 		break;
+		/*
 		case 1: // the hexagonal bullet
 			hp = AoP56 ? NormAng*Radius : TipHeight;
 			Body = new Bullet(_RefI, Radius, Halh_Height, hp, Itr, k, Ey);
@@ -314,6 +315,7 @@ int main(int argc, char* argv[])
 			NormGammaAngle =	M_PI/(3.0*GammaNumber);
 			NormBettaAngle =	M_PI/(BettaNumber);
 		break;
+		*/
 	}
 
 	nc.clear();
@@ -355,7 +357,6 @@ int main(int argc, char* argv[])
 			f_To = "copy_params.dat";
 	QFile::copy(f_From, f_To);
 
-	double s = 0, betta, gamma;
 	ofstream f("log.dat", ios::out);
 	f << (QFileInfo(QCoreApplication::applicationFilePath()).fileName()).toStdString();
 	f << endl << time_start;
@@ -363,24 +364,34 @@ int main(int argc, char* argv[])
 
 	//--------------------------------------------------------------------------
 	uint gamma_25p = floor(0.25*GammaNumber);
-	double p_Betta[BettaNumber], dcos[BettaNumber] ;
+	double p_Betta[BettaNumber], dcos[BettaNumber];
 	for (uint i=0; i<BettaNumber; i++)
+	{
+		double betta = (double)i*NormBettaAngle;
 		p_Betta[i] = 1.0;
+		if (!i)
+			dcos[i] = 1.0-cos(0.5*NormBettaAngle);
+		else
+			if(i==(BettaNumber-1))
+				dcos[i] = cos(betta-0.5*NormBettaAngle)-cos(betta);
+			else
+				dcos[i] = cos(betta-0.5*NormBettaAngle)-cos(betta+0.5*NormBettaAngle);
+	}
 
 	if (fabs(T)>FLT_EPSILON)
 	{
-		NormBettaAngle = T/double(BettaNumber)*M_PI/180.0;
+		NormBettaAngle = T/double(BettaNumber-1)*M_PI/180.0;
 		double norm1 = 0.0, norm2 = 0.0, sigma = T/2.0*M_PI/180.;
 		for (uint i=0; i<BettaNumber; i++)
 		{
-			double betta = (i+0.5)*NormBettaAngle, h;
+			double betta = (double)i*NormBettaAngle, h;
 			if (!i)
-				dcos[i] = 1-cos(0.5*NormBettaAngle), h = 0.5*NormBettaAngle;
+				h = 0.5*NormBettaAngle;
 			else
 				if(i==(BettaNumber-1))
-					dcos[i] = cos(betta-0.5*NormBettaAngle)-cos(betta), h = 0.5*NormBettaAngle;
+					h = 0.5*NormBettaAngle;
 				else
-					dcos[i] = cos(betta-0.5*NormBettaAngle)-cos(betta+0.5*NormBettaAngle), h = NormBettaAngle;
+					h = NormBettaAngle;
 			p_Betta[i] = exp(-betta*betta/(2.0*sigma*sigma));
 			norm1 += p_Betta[i]*dcos[i];
 			norm2 += p_Betta[i]*h;
@@ -393,7 +404,7 @@ int main(int argc, char* argv[])
 		f << "betta p_Betta dcos";
 		for (uint i=0; i<BettaNumber; i++)
 		{
-			double betta = (i+0.5)*NormBettaAngle;
+			double betta = (double)i*NormBettaAngle;
 			f << endl << betta/M_PI*180. << " " << p_Betta[i] << " " << dcos[i];
 		}
 		f << "\nnorm = " << 1.0/(sqrt(2.0*M_PI)*sigma*180.0/M_PI)*norm2*180.0/M_PI;
@@ -410,18 +421,19 @@ int main(int argc, char* argv[])
 			Beam_Trajectories[i][j] = 0;
 
 
+	double s = 0, betta, gamma;
 	try
 	{
 		for(betta_i=0; betta_i<BettaNumber; betta_i++)
 		{
 			if(!betta_i)
 				cout << "\n" << 0;
-			betta = (betta_i+0.5)*NormBettaAngle;
+			betta = (double)betta_i*NormBettaAngle;
+			P = p_Betta[betta_i]*dcos[betta_i];
 			for(gamma_j=0; gamma_j<GammaNumber; gamma_j++)
 			{
 				gamma = (gamma_j+0.5)*NormGammaAngle;
 				Body->ChangePosition(betta, gamma, 0.0);
-				P = p_Betta[betta_i]*sin(betta);
 				s += P*Body->FTforConvexCrystal(Handler);
 				if(!(gamma_j%gamma_25p)) cout<<'.';
 			}
@@ -439,7 +451,7 @@ int main(int argc, char* argv[])
 		getch(); return 1;
 	}
 
-	const double NRM =2.0*NumOrient/M_PI;
+	const double NRM = GammaNumber;
 	//----------------------------------------------------------------------------
 	if(F_Mt)
 	{
