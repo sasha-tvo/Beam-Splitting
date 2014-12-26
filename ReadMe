@@ -3,3 +3,5 @@ Physical optics approximation branch
 Program for an approximate estimation of the contribution of different trajectories of beams
 in the backscattering direction, which are scattered in a certain neighborhood backscattering
 direction for randomly oriented particles.
+
+This is the first step to calculate trajectories map
