@@ -1,23 +1,15 @@
 0     //0  the kind of the particle (0-prizm, 1-bullet, 2-pyramid, 3-tapered prizm, 4-cup)
 0     //1  tip angle of pyramid 56 degrees (1-yes, 0-no)
-30    //2  the prism radius
-75    //3  the prism semiheight
+50    //2  the prism radius
+7.986 //3  the prism semiheight
 0     //4  the radius of tip
 0     //5  the height of tip
 1.3   //6  the real part of refraction index
-20    //7  cone (in deg)
-121   //8  full number of orientations for axial rotation angle, must be uneven 
-25    //*9 maximum tilt angle, in deg (0 - random orientation)	
-25    //10 full number of orientations for zenith angle
-1.064 //11 длина волны
-3     //12 the number of the internal reflections for every beam
-1     //13 0 - только суммируем, 1 - выводим всю матрицу
-8     //14 the number of trajectories(0 - all)
- 0 6 7 0//
- 0 7 6 0//
- 3 6 7 3//
- 3 7 6 3//
- 4 6 7 2//
- 4 7 6 2//
- 2 6 7 4//
- 2 7 6 4//
+89.99 //7  cone (in deg)
+31    //8  full number of orientations for axial rotation angle, must be uneven 
+0     //
+90    //9  full number of orientations for zenith angle
+1.064 //10 длина волны
+10    //11 the number of the internal reflections for every beam
+0     //12 0 - только суммируем, 1 - выводим всю матрицу
+0     //13 the number of trajectories(0 - all)

@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
 	TipRadius =		params[4];
 	TipHeight =		params[5];
 	_RefI =			complex(params[6],0.0);
-	cos_angle =		cos(M_PI/2.0-params[7]*M_PI/180.0);
+	cos_angle =		cos(params[7]*M_PI/180.0);
 	GammaNumber =	params[8];
 	T =				params[9];
 	BettaNumber =	params[10];
