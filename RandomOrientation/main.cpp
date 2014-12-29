@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
 	//----------------------------------------------------------------------------
 	Body->Phase() = true;
 
-	double 	gamma_cnt = 0.0*(M_PI/6.0), dBettaRad = 0.0, dGammaRad = 1.0, ConusRad = ConusGrad*Rad;//, Tgamma;
+	double 	gamma_cnt = 1.0*(M_PI/6.0), dBettaRad = 0.0, dGammaRad = 1.0, ConusRad = ConusGrad*Rad;//, Tgamma;
 	if (BettaNumber) dBettaRad = (betta_max_Rad-betta_min_Rad)/(double)BettaNumber;
 	if (GammaNumber) dGammaRad = M_PI/6.0/(double)GammaNumber;
 	if (ThetaNumber) dt = ConusRad/(double)ThetaNumber;
@@ -204,7 +204,8 @@ int main(int argc, char* argv[])
 	dir.cd(QString::fromStdString(fRes));
 	QDir::setCurrent(dir.absolutePath());
 
-	Arr2D M_(PhiNumber+1,ThetaNumber+1,4,4);
+	//Arr2D M_(PhiNumber+1,ThetaNumber+1,4,4);
+	Arr2D M_(BettaNumber+1,GammaNumber*2+2,4,4);
 	M_.ClearArr();
 	vector<Arr2D> M;
 	M.clear();
@@ -317,7 +318,7 @@ int main(int argc, char* argv[])
 					dgamma_sum += Pgamma;
 					Body->ChangePosition(bettaRad, gamma, 0);
 					Jones_temp.clear();
-					Arr2DC tmp_(PhiNumber+1,ThetaNumber+1,2,2);
+					Arr2DC tmp_(1,1,2,2);
 					tmp_.ClearArr();
 					for (uint q=0;q<MuellerMatrixNumber; q++)
 						Jones_temp.push_back(tmp_);
@@ -326,10 +327,12 @@ int main(int argc, char* argv[])
 					{
 						//if (Mueller_mask[q]==1)
 						{
-							for (uint  j_tt=0; j_tt<=ThetaNumber; j_tt++)
-								for (uint  i_fi=0; i_fi<=PhiNumber; i_fi++)
+							//for (uint  j_tt=0; j_tt<=ThetaNumber; j_tt++)
+								//for (uint  i_fi=0; i_fi<=PhiNumber; i_fi++)
 								{
-									matrix m_tmp = Mueller(Jones_temp[q](i_fi,j_tt));
+									uint j_tt=GammaNumber+Gamma_j;
+									uint i_fi=Betta_i;
+									matrix m_tmp = Mueller(Jones_temp[q](0,0));
 									M[q].insert(i_fi,j_tt,dcos*Pgamma*norm*m_tmp);
 								}
 						}
@@ -381,35 +384,36 @@ int main(int argc, char* argv[])
 		{
 
 			ofstream f((name_f+"_"+tr+".dat").c_str(), ios::out),
-					res(("ga_"+tr+".dat").c_str(), ios::app);
-			f << (to_string(ConusGrad)+" "+to_string(PhiNumber)+" "+to_string(ThetaNumber)).c_str();
+					res(("ga_"+tr+".dat").c_str(), ios::out);
+			//f << (to_string(ConusGrad)+" "+to_string(BettaNumber)+" "+to_string(GammaNumber*2+1)).c_str();
 			res << endl<< "tetta M11 M12 M13 M14 M21 M22 M23 M24 M31 M32 M33 M34 M41 M42 M43 M44";
 			f.precision(10);
 			res.precision(10);
 
 
 			matrix sum(4,4);
-			for (uint j_tt=0; j_tt<=ThetaNumber; j_tt++)
+			for (uint i_fi=0; i_fi<=BettaNumber; i_fi++)
+
 			{
-				sum.Fill(0);
-				double tt = (double)j_tt*dt/Rad;
-				for (uint i_fi=0; i_fi<=PhiNumber; i_fi++)
+				sum.Fill(0);				
+				double fi =  betta_min_Rad+(double)i_fi*dBettaRad;
+				for (uint j_tt=0; j_tt<=2*GammaNumber+1; j_tt++)
 				{
-					double fi = -((double)i_fi)*df;
+					double tt = gamma_cnt+(double)((int)j_tt-(int)GammaNumber)*dGammaRad;
 					matrix m = M[q](i_fi,j_tt), L(4,4);
-					f << endl << tt << " " << -fi/Rad << " "; f << m;
-					L[0][0] = 1.0; L[0][1] = 0.0;			L[0][2] = 0.0;			L[0][3] = 0.0;
-					L[1][0] = 0.0; L[1][1] = cos(2.0*fi);	L[1][2] = sin(2.0*fi);	L[1][3] = 0.0;
-					L[2][0] = 0.0; L[2][1] =-sin(2.0*fi);	L[2][2] = cos(2.0*fi);	L[2][3] = 0.0;
-					L[3][0] = 0.0; L[3][1] = 0.0;			L[3][2] = 0.0;			L[3][3] = 1.0;
-					if (!j_tt)
-						sum += L*m*L;
-					else
-						sum += m*L;
+					f << endl << tt/Rad << " " << fi/Rad << " "; f << m<<" "<<(m[0][0]-m[1][1]+m[2][2]-m[3][3])/m[0][0];
+					//L[0][0] = 1.0; L[0][1] = 0.0;			L[0][2] = 0.0;			L[0][3] = 0.0;
+					//L[1][0] = 0.0; L[1][1] = cos(2.0*fi);	L[1][2] = sin(2.0*fi);	L[1][3] = 0.0;
+					//L[2][0] = 0.0; L[2][1] =-sin(2.0*fi);	L[2][2] = cos(2.0*fi);	L[2][3] = 0.0;
+					//L[3][0] = 0.0; L[3][1] = 0.0;			L[3][2] = 0.0;			L[3][3] = 1.0;
+					//if (!j_tt)
+					//	sum += L*m*L;
+					//else
+						sum += m;
 				}
-				sum /= ((double)PhiNumber+1.0);
-				res << endl << tt << " ";
-				res << sum;
+				sum /= ((double)2*GammaNumber+1.0);
+				res << endl << fi/Rad << " ";
+				res << sum<<" "<<(sum[0][0]-sum[1][1]+sum[2][2]-sum[3][3])/sum[0][0];
 			}
 			f.close();
 			res << endl;
@@ -526,12 +530,14 @@ void Handler(Beam& bm)
 		}
 		bm.SetCoefficients_abcd(bm.N, Nx, Ny, r0);
 	}
-	for (uint  i_fi=0; i_fi<=PhiNumber; i_fi++)
+	//for (uint  i_fi=0; i_fi<=PhiNumber; i_fi++)
+	uint i_fi=0;
 	{
 		double f = (double)i_fi*df,
 				cf = cos(f),
 				sf = sin(f);
-		for (uint  j_tt=0; j_tt<=ThetaNumber; j_tt++)
+		//for (uint  j_tt=0; j_tt<=ThetaNumber; j_tt++)
+		uint  j_tt=0;
 		{
 			double t = (double)j_tt*dt,
 					ct = cos(t),
@@ -553,10 +559,16 @@ void Handler(Beam& bm)
 
 				matrixC Jn_rot(2,2);
 				complex fn(0,0);
+				Point3D n0=bm.r;
+				Point3D ns=bm.N;
+				Point3D nr=vr;
 				if (perpend_diff)
 				{
 					Jn_rot[0][0]=-bm.F*vf; Jn_rot[0][1]= bm.T*vf;
 					Jn_rot[1][0]= bm.F*vt; Jn_rot[1][1]=-bm.T*vt;
+					//Jn_rot[0][0]=((nr%(n0%bm.T))-nr%(nr%(n0%(n0%bm.T))))*vt/2.0; Jn_rot[0][1]=((nr%(n0%bm.F))-nr%(nr%(n0%(n0%bm.F))))*vt/2.0;
+					//Jn_rot[1][0]=((nr%(n0%bm.T))-nr%(nr%(n0%(n0%bm.T))))*vf/2.0; Jn_rot[1][1]=((nr%(n0%bm.F))-nr%(nr%(n0%(n0%bm.F))))*vf/2.0;
+
 					fn = bm.DiffractionShiftedPr(vr, lm);
 					//fn = bm.DiffractionShifted(vr, lm);
 				}
@@ -564,8 +576,14 @@ void Handler(Beam& bm)
 				{
 					Jn_rot[0][0]=-(bm.N%bm.T)*vf; Jn_rot[0][1]=-(bm.N%bm.F)*vf;
 					Jn_rot[1][0]= (bm.N%bm.T)*vt; Jn_rot[1][1]= (bm.N%bm.F)*vt;
+					//Jn_rot[0][0]=((nr%(ns%bm.T))-nr%(nr%(n0%(ns%bm.T))))*vt/2.0; Jn_rot[0][1]=((nr%(ns%bm.F))-nr%(nr%(ns%(n0%bm.F))))*vt/2.0;
+					//Jn_rot[1][0]=((nr%(ns%bm.T))-nr%(nr%(n0%(ns%bm.T))))*vf/2.0; Jn_rot[1][1]=((nr%(ns%bm.F))-nr%(nr%(ns%(n0%bm.F))))*vf/2.0;
+					//Jn_rot[0][0]=((nr%(ns%bm.T)))*vt/1.0; Jn_rot[0][1]=((nr%(ns%bm.F)))*vt/1.0;
+					//Jn_rot[1][0]=((nr%(ns%bm.T)))*vf/1.0; Jn_rot[1][1]=((nr%(ns%bm.F)))*vf/1.0;
+
 					fn = bm.DiffractionInclinePr(vr, lm);
 					//fn = bm.DiffractionIncline(vr, lm);
+					//fn = bm.DiffractionShiftedPr(vr, lm);
 				}
 				matrixC fn_jn = exp_im(m_2pi*(lng_proj0-vr*r0)/lm)*bm();
 				Jones_temp[vi].insert(i_fi,j_tt,fn*Jn_rot*fn_jn);
