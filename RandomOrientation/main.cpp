@@ -260,6 +260,7 @@ int main(int argc, char* argv[])
 		cout << endl << s << "\nPress any key.";
 		getch(); return 1;
 	}
+	cout<< "\nSettings have neen loaded... ";
 	//---------------------------------------------------------------------------
 	KoP =			params[0];
 	AoP56 =			params[1];
@@ -322,8 +323,10 @@ int main(int argc, char* argv[])
 	dif.clear();
 	en.clear();
 
+
 	Body->Phase() = false;
 	const double NumOrient = GammaNumber*BettaNumber;
+
 
 	if(Sorting)
 	{
@@ -337,6 +340,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+
 	vr = k;
 	vf = -Ey;
 	vt = vf%vr; vt /= length(vt);
@@ -347,6 +351,7 @@ int main(int argc, char* argv[])
 	clock_t t = clock();
 	string time_start = "\nNumerical calculations started at: "+(time.toString("hh:mm:ss")).toStdString();
 	cout << time_start;
+
 
 	QString	fRes = "Data"+date.toString("ddMMyy")+"_"+(time.toString("hhmmss"));
 	dir.mkdir(fRes);
@@ -856,7 +861,7 @@ void MaskAppend(char s[])
 
 void DelFace(void)
 {
-	for(unsigned int i=0;i<_NoF; i++)
+	for(unsigned int i=0;i<Itr+1; i++)
 		delete[] Face[i];
 	delete[] Face;
 }
