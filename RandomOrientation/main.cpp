@@ -136,8 +136,8 @@ int main(int argc, char* argv[])
 
 	KoP =					0; //Only hexagonal
 	AoP56 =					0; // No Tip
-	Halh_Height =			params[0]/2.0;
-	Radius =				params[1]/2.0;
+	Halh_Height =			params[0]/1.0;
+	Radius =				params[1]/1.0;
 	_RefI =					complex(params[2],0);
 	betta_min_Rad =			params[3]*Rad;
 	betta_max_Rad =			params[4]*Rad;
