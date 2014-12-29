@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
 	{
 		ofstream res("ga_all.dat", ios::out);
 		res << "betta M11 M12 M13 M14 M21 M22 M23 M24 M31 M32 M33 M34 M41 M42 M43 M44"<<endl;
-		res << to_string(BettaNumber) << " " << to_string(ThetaNumber) << " " << to_string(dBettaRad/Rad) << " " << to_string(dt/Rad)<<endl;
+		//res << to_string(BettaNumber) << " " << to_string(ThetaNumber) << " " << to_string(dBettaRad/Rad) << " " << to_string(dt/Rad)<<endl;
 		res.close();
 	}
 
@@ -312,7 +312,7 @@ int main(int argc, char* argv[])
 			}
 			ofstream res("ga_all.dat", ios::app);
 			res.precision(10);
-			res <<" "<< Betta_i << " ";
+			res <<" "<< bettaRad/Rad << " ";
 			res << m_tot;
 			res << endl;
 			res.close();
@@ -382,24 +382,38 @@ void Handler(Beam& bm)
 
 	double lng_proj0 = bm.lng+r0*bm.r;
 
-	Point3D vr(0,0,1),vt;
+	Point3D vr(0,0,1),vt,vf;
+	vf=-Ey;
 
 	vt = -Ey%vr;
 	vt /= length(vt);
 
 	matrixC Jn_rot(2,2);
 	complex fn(0,0);
-	if (perpend_diff)
+	Point3D n0=bm.r;
+	Point3D ns=bm.N;
+	Point3D nr=vr;
+	switch(perpend_diff)
 	{
-		Jn_rot[0][0]= bm.F*Ey; Jn_rot[0][1]= -bm.T*Ey;
-		Jn_rot[1][0]= bm.F*vt; Jn_rot[1][1]= -bm.T*vt;
-		fn = bm.DiffractionShifted(vr, lm);
-	}
-	else
-	{
-		Jn_rot[0][0]= (bm.N%bm.T)*Ey; Jn_rot[0][1]= (bm.N%bm.F)*Ey;
-		Jn_rot[1][0]= (bm.N%bm.T)*vt; Jn_rot[1][1]= (bm.N%bm.F)*vt;
-		fn = bm.DiffractionIncline(vr, lm);
+	case 0:
+		{
+			Jn_rot[0][0]= bm.F*Ey; Jn_rot[0][1]= -bm.T*Ey;
+			Jn_rot[1][0]= bm.F*vt; Jn_rot[1][1]= -bm.T*vt;
+			fn = bm.DiffractionShifted(vr, lm);
+		}; break;
+	case 1:
+		{
+			Jn_rot[0][0]= (bm.N%bm.T)*Ey; Jn_rot[0][1]= (bm.N%bm.F)*Ey;
+			Jn_rot[1][0]= (bm.N%bm.T)*vt; Jn_rot[1][1]= (bm.N%bm.F)*vt;
+			fn = bm.DiffractionIncline(vr, lm);
+		}; break;
+	case 2:
+		{
+			Jn_rot[0][0]=((nr%(ns%bm.T))-nr%(nr%(n0%(ns%bm.T))))*vt/2.0; Jn_rot[0][1]=((nr%(ns%bm.F))-nr%(nr%(ns%(n0%bm.F))))*vt/2.0;
+			Jn_rot[1][0]=((nr%(ns%bm.T))-nr%(nr%(n0%(ns%bm.T))))*vf/2.0; Jn_rot[1][1]=((nr%(ns%bm.F))-nr%(nr%(ns%(n0%bm.F))))*vf/2.0;
+			fn = bm.DiffractionIncline(vr, lm);
+		}; break;
+	default:  cout<< "Error in diffraction type!!!";
 	}
 	matrixC fn_jn = exp_im(m_2pi*(lng_proj0-vr*r0)/lm)*bm();
 	Jones_temp[vi]+=fn*Jn_rot*fn_jn;
