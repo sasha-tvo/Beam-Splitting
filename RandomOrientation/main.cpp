@@ -597,7 +597,7 @@ void BuildNamesOfGroups()
 
 void DelFace(void)
 {
-	for (uint i=0;i<_NoF; i++)
+	for (uint i=0;i<Itr+1; i++)
 		delete[] Face[i];
 	delete[] Face;
 }
