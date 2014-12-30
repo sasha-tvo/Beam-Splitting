@@ -38,6 +38,7 @@ double			Radius,						///< Radius of the particle
 				SizeBin,					///< The size of the bin for Theta angle (radians)
 				betta_min_Rad,				///< Initial Betta angle
 				betta_max_Rad,				///< Final Betta angle
+				gamma_cnt,					///< Basis point to gamma rotating
 				GammaLimmExtendedCoeff,		///< Coeffitient by which Gamma Limm will be extended
 				lm,							///< Wave Length
 				ConusGrad,					///< Conus in backscattering (grad)
@@ -143,14 +144,15 @@ int main(int argc, char* argv[])
 	betta_max_Rad =			params[4]*Rad;
 	BettaNumber =			params[5];
 	GammaLimmExtendedCoeff = params[6];
-	GammaNumber =			params[8];
+	gamma_cnt =				params[7]*Rad;
+	GammaNumber =			params[8];	
 	lm =					params[11];
 	ConusGrad =				params[12];
 	ThetaNumber =			params[13];
 	PhiNumber =				params[14];
 	perpend_diff =			(params[15]>0.5?true:false);
 
-	if (Halh_Height<=0 || Radius<=0 || NumberOfTrajectory==0)
+	if (Halh_Height<=0 || Radius<=0)
 	{
 		cout << "\nError! Incorrect input data. Press any key for exit.";
 		getch(); return 1;
@@ -178,7 +180,7 @@ int main(int argc, char* argv[])
 	//----------------------------------------------------------------------------
 	Body->Phase() = true;
 
-	double 	gamma_cnt = M_PI/6.0, dBettaRad = 0.0, dGammaRad = 1.0, ConusRad = ConusGrad*Rad;//, Tgamma;
+	double 	dBettaRad = 0.0, dGammaRad = 1.0, ConusRad = ConusGrad*Rad;//, Tgamma;
 	if (BettaNumber) dBettaRad = (betta_max_Rad-betta_min_Rad)/(double)BettaNumber;
 	if (ThetaNumber) dt = ConusRad/(double)ThetaNumber;
 	if (PhiNumber) df = m_2pi/(double)(PhiNumber+1);
@@ -192,6 +194,9 @@ int main(int argc, char* argv[])
 
 	Arr2D M_(PhiNumber+1,ThetaNumber+1,4,4);
 	M_.ClearArr();
+
+
+
 	vector<Arr2D> M;
 	M.clear();
 	for (uint q=0;q<AllowedMuellerMatrixNumber; q++)
@@ -205,49 +210,59 @@ int main(int argc, char* argv[])
 	for (uint i=0; i<AllowedTrajectoryNumber; i++)
 		AllowedMaskAppend(allowed_beams_mask[i].c_str());
 
-	//Run over all trajectories in params.dat
-	list<Chain>::const_iterator cm = mask.begin();
-	for (;cm!=mask.end();cm++)
+	if (NumberOfTrajectory)
 	{
-		uint  pn = 0, sm = cm->Size();
-		//Run over list of allowed trajectories
-		for (list<Chain>::const_iterator ct = AllowedMask.begin();ct!=AllowedMask.end();ct++, pn++)
+		//Run over all trajectories in params.dat
+		list<Chain>::const_iterator cm = mask.begin();
+		for (;cm!=mask.end();cm++)
 		{
-			uint  st = ct->Size();
-			// check size
-			if (sm!=st) continue;
-
-			list<unsigned int>::const_iterator im = cm->Ch.begin(), it = ct->Ch.begin();
-			// run over all equal elements
-			for (;im!=cm->Ch.end() && (*im)==(*it);im++, it++);
-			// if ran all elements, trajectories are equal
-			if (im==cm->Ch.end())
+			uint  pn = 0, sm = cm->Size();
+			//Run over list of allowed trajectories
+			for (list<Chain>::const_iterator ct = AllowedMask.begin();ct!=AllowedMask.end();ct++, pn++)
 			{
-				uint  vi;
-				string tr;
-				if (!pn) { vi = 0; tr = "0"; }
-				else if (pn==1) { vi = 1; tr = "070"; }
-				else if (pn==2) { vi = 2; tr = "3"; }
-				else if (pn==3) { vi = 3; tr = "363"; }
-				else if (pn>3 && pn<8) { vi = 4; tr = "2674_2764_4672_4762"; }
-				else if (pn==8 || pn==9) { vi = 5; tr = "3673_3763"; }
-				else if (pn==10 || pn==11) { vi = 6; tr = "0670_0760"; }
-				else if (pn==12 || pn==13) { vi = 7; tr = "370673_376073"; }
-				else if (pn==14 || pn==15) { vi = 8; tr = "063760_067360"; }
-				else if (pn==16 || pn==17) { vi = 9; tr = "2673_2763"; }
-				else if (pn==18 || pn==19) { vi = 10; tr = "4673_4763"; }
-				else if (pn==20) { vi =  11; tr = "21674"; }
-				else if (pn==21) { vi =  12; tr = "47612"; }
-				else if (pn==22) { vi =  13; tr = "27654"; }
-				else if (pn==23) { vi =  14; tr = "45672"; }
-				else { vi =  15;  tr = "2674XL"; }
-				Mueller_mask[vi] = 1;
-				ofstream out(("ga_"+tr+".dat").c_str(), ios::out);
-				out << to_string(BettaNumber) << " " << to_string(ThetaNumber) << " " << to_string(dBettaRad/Rad) << " " << to_string(dt/Rad);
-				out.close();
-				break;
+				uint  st = ct->Size();
+				// check size
+				if (sm!=st) continue;
+
+				list<unsigned int>::const_iterator im = cm->Ch.begin(), it = ct->Ch.begin();
+				// run over all equal elements
+				for (;im!=cm->Ch.end() && (*im)==(*it);im++, it++);
+				// if ran all elements, trajectories are equal
+				if (im==cm->Ch.end())
+				{
+					uint  vi;
+					string tr;
+					if (!pn) { vi = 0; tr = "0"; }
+					else if (pn==1) { vi = 1; tr = "070"; }
+					else if (pn==2) { vi = 2; tr = "3"; }
+					else if (pn==3) { vi = 3; tr = "363"; }
+					else if (pn>3 && pn<8) { vi = 4; tr = "2674_2764_4672_4762"; }
+					else if (pn==8 || pn==9) { vi = 5; tr = "3673_3763"; }
+					else if (pn==10 || pn==11) { vi = 6; tr = "0670_0760"; }
+					else if (pn==12 || pn==13) { vi = 7; tr = "370673_376073"; }
+					else if (pn==14 || pn==15) { vi = 8; tr = "063760_067360"; }
+					else if (pn==16 || pn==17) { vi = 9; tr = "2673_2763"; }
+					else if (pn==18 || pn==19) { vi = 10; tr = "4673_4763"; }
+					else if (pn==20) { vi =  11; tr = "21674"; }
+					else if (pn==21) { vi =  12; tr = "47612"; }
+					else if (pn==22) { vi =  13; tr = "27654"; }
+					else if (pn==23) { vi =  14; tr = "45672"; }
+					else { vi =  15;  tr = "2674XL"; }
+					Mueller_mask[vi] = 1;
+					ofstream out(("ga_"+tr+".dat").c_str(), ios::out);
+					out << to_string(BettaNumber) << " " << to_string(ThetaNumber) << " " << to_string(dBettaRad/Rad) << " " << to_string(dt/Rad);
+					out.close();
+					break;
+				}
 			}
 		}
+	}
+	else
+	{
+		Mueller_mask[0] = 1;
+		ofstream out("ga_all.dat", ios::out);
+		out << to_string(BettaNumber) << " " << to_string(ThetaNumber) << " " << to_string(dBettaRad/Rad) << " " << to_string(dt/Rad);
+		out.close();
 	}
 
 
@@ -277,7 +292,13 @@ int main(int argc, char* argv[])
 
 
 			dcos_sum += dcos;
-			uint  NumLim = FillLim(ConusRad, bettaRad, GammaLimmExtendedCoeff, "out.dat");
+			uint  NumLim=1;
+			sort_lim[0] = M_PI;
+
+
+			if (NumberOfTrajectory)
+				NumLim = FillLim(ConusRad, bettaRad, GammaLimmExtendedCoeff, "out.dat");
+
 			if (!NumLim) continue;
 			dgamma_sum = 0.0;
 			//-------------------------------------------------------------------------
@@ -341,7 +362,8 @@ int main(int argc, char* argv[])
 	else
 		name_f = "b_"+to_string(betta_min_Rad/Rad)+"_";
 
-	for (uint q=0; q<AllowedMuellerMatrixNumber; q++)
+	if (NumberOfTrajectory)
+		for (uint q=0; q<AllowedMuellerMatrixNumber; q++)
 	{
 		string tr;
 		if (!q) tr = "0";
@@ -399,7 +421,43 @@ int main(int argc, char* argv[])
 			res.close();
 		}
 	}
+	else
+	{
+		ofstream f((name_f+"_all.dat").c_str(), ios::out),
+				res("ga_all.dat", ios::app);
+		f << (to_string(ConusGrad)+" "+to_string(PhiNumber)+" "+to_string(ThetaNumber)).c_str();
+		res << endl<< "tetta M11 M12 M13 M14 M21 M22 M23 M24 M31 M32 M33 M34 M41 M42 M43 M44";
+		f.precision(10);
+		res.precision(10);
 
+
+		matrix sum(4,4);
+		for (uint j_tt=0; j_tt<=ThetaNumber; j_tt++)
+		{
+			sum.Fill(0);
+			double tt = (double)j_tt*dt/Rad;
+			for (uint i_fi=0; i_fi<=PhiNumber; i_fi++)
+			{
+				double fi = -((double)i_fi)*df;
+				matrix m = M[0](i_fi,j_tt), L(4,4);
+				f << endl << tt << " " << -fi/Rad << " "; f << m;
+				L[0][0] = 1.0; L[0][1] = 0.0;			L[0][2] = 0.0;			L[0][3] = 0.0;
+				L[1][0] = 0.0; L[1][1] = cos(2.0*fi);	L[1][2] = sin(2.0*fi);	L[1][3] = 0.0;
+				L[2][0] = 0.0; L[2][1] =-sin(2.0*fi);	L[2][2] = cos(2.0*fi);	L[2][3] = 0.0;
+				L[3][0] = 0.0; L[3][1] = 0.0;			L[3][2] = 0.0;			L[3][3] = 1.0;
+				if (!j_tt)
+					sum += L*m*L;
+				else
+					sum += m*L;
+			}
+			sum /= ((double)PhiNumber+1.0);
+			res << endl << tt << " ";
+			res << sum;
+		}
+		f.close();
+		res << endl;
+		res.close();
+	}
 
 	//----------------------------------------------------------------------------
 	ofstream _out("out.dat", ios::out);
@@ -455,9 +513,9 @@ void Handler(Beam& bm)
 		if (!flag) return;
 	}
 
-	double ctetta = bm.r*k;
+	//double ctetta = bm.r*k;
 
-	if (ctetta < 0.17364817766693034885171662676931) return;
+	//if (ctetta < 0.17364817766693034885171662676931) return;
 
 	//----------------------------------------------------------------------------
 	uint  vi;
@@ -475,7 +533,8 @@ void Handler(Beam& bm)
 	else if (pn==23) vi = 14;
 	else vi = 15;
 
-	if (sort_lim[Lim]>lim[vi]) return;
+	if (NumberOfTrajectory)
+		if (sort_lim[Lim]>lim[vi]) return;
 	//----------------------------------------------------------------------------
 
 	bm.F = bm.e;
@@ -508,6 +567,7 @@ void Handler(Beam& bm)
 	for (uint  i_fi=0; i_fi<=PhiNumber; i_fi++)
 		for (uint  j_tt=0; j_tt<=ThetaNumber; j_tt++)
 		{
+
 			double f = (double)i_fi*df,
 				t = (double)j_tt*dt,
 				cf = cos(f),
@@ -517,32 +577,38 @@ void Handler(Beam& bm)
 			Point3D vr(st*cf,st*sf,ct),
 				vf,
 				vt;
-			if (!j_tt)
-				vf = -Ey;
-			else
-				vf = Point3D(-sf,cf,0);
-			vt = vf%vr;
-			vt /= length(vt);
 
-			matrixC Jn_rot(2,2);
-			complex fn(0,0);
-			if (perpend_diff)
+			double ctetta = bm.r*vr;
+
+			if (ctetta > 0.17364817766693034885171662676931)
 			{
-				Jn_rot[0][0]=-bm.F*vf; Jn_rot[0][1]= bm.T*vf;
-				Jn_rot[1][0]= bm.F*vt; Jn_rot[1][1]=-bm.T*vt;
-				fn = bm.DiffractionShiftedPr(vr, lm);
-				//fn = bm.DiffractionShifted(vr, lm);
+				if (!j_tt)
+					vf = -Ey;
+				else
+					vf = Point3D(-sf,cf,0);
+				vt = vf%vr;
+				vt /= length(vt);
+
+				matrixC Jn_rot(2,2);
+				complex fn(0,0);
+				if (perpend_diff)
+				{
+					Jn_rot[0][0]=-bm.F*vf; Jn_rot[0][1]= bm.T*vf;
+					Jn_rot[1][0]= bm.F*vt; Jn_rot[1][1]=-bm.T*vt;
+					fn = bm.DiffractionShiftedPr(vr, lm);
+					//fn = bm.DiffractionShifted(vr, lm);
+				}
+				else
+				{
+					Jn_rot[0][0]=-(bm.N%bm.T)*vf; Jn_rot[0][1]=-(bm.N%bm.F)*vf;
+					Jn_rot[1][0]= (bm.N%bm.T)*vt; Jn_rot[1][1]= (bm.N%bm.F)*vt;
+					//fn = bm.DiffractionInclinePr(vr, lm);
+					fn = bm.DiffractionIncline(vr, lm);
+				}
+				matrixC fn_jn = exp_im(m_2pi*(lng_proj0-vr*r0)/lm)*bm();
+				Jones_temp[vi].insert(i_fi,j_tt,fn*Jn_rot*fn_jn);
+				//Jones_temp[vi].insert(i_fi,j_tt,fn*Jn_rot*bm());
 			}
-			else
-			{
-				Jn_rot[0][0]=-(bm.N%bm.T)*vf; Jn_rot[0][1]=-(bm.N%bm.F)*vf;
-				Jn_rot[1][0]= (bm.N%bm.T)*vt; Jn_rot[1][1]= (bm.N%bm.F)*vt;
-				//fn = bm.DiffractionInclinePr(vr, lm);
-				fn = bm.DiffractionIncline(vr, lm);
-			}
-			matrixC fn_jn = exp_im(m_2pi*(lng_proj0-vr*r0)/lm)*bm();
-			Jones_temp[vi].insert(i_fi,j_tt,fn*Jn_rot*fn_jn);
-			//Jones_temp[vi].insert(i_fi,j_tt,fn*Jn_rot*bm());
 		}
 }
 
