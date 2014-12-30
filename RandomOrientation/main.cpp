@@ -49,7 +49,7 @@ matrix 			back(4,4),					///< Mueller matrix in backward direction
 list<Chain>		mask;						///< List of trajectories to take into account
 Point3D			k(0,0,1),					///< Direction on incident wave
 				Ey(0,1,0);					///< Basis for polarization characteristic of light
-bool			perpend_diff;				///< If true - diffraction will be calculated with Shifted screen, perpendicular to propagation direction; if false - diffraction will be calculated with incline screen
+int				perpend_diff;				///< If true - diffraction will be calculated with Shifted screen, perpendicular to propagation direction; if false - diffraction will be calculated with incline screen
 //==============================================================================
 
 struct segment
@@ -120,6 +120,7 @@ int main(int argc, char* argv[])
 	dir.cd(QCurDir);
 	QDir::setCurrent(dir.absolutePath());
 
+
 	try
 	{
 		if (ReadFile((char*)"params.dat", params, NumberOfParameters))
@@ -136,8 +137,8 @@ int main(int argc, char* argv[])
 
 	KoP =					0; //Only hexagonal
 	AoP56 =					0; // No Tip
-	Halh_Height =			params[0]/1.0;
-	Radius =				params[1]/1.0;
+	Halh_Height =			params[1]/1.0;
+	Radius =				params[0]/1.0;
 	_RefI =					complex(params[2],0);
 	betta_min_Rad =			params[3]*Rad;
 	betta_max_Rad =			params[4]*Rad;
@@ -149,7 +150,7 @@ int main(int argc, char* argv[])
 	ConusGrad =				params[12];
 	ThetaNumber =			params[13];
 	PhiNumber =				params[14];
-	perpend_diff =			(params[15]>0.5?true:false);
+	perpend_diff =			(int) params[15];
 
 	if (Halh_Height<=0 || Radius<=0 || NumberOfTrajectory==0)
 	{
@@ -198,6 +199,8 @@ int main(int argc, char* argv[])
 	for (uint q=0;q<=MuellerMatrixNumber; q++)
 		M.push_back(M_);
 
+
+
 	uint orn = 0;
 	cout <<endl;
 	for (uint vi=0;vi<=MuellerMatrixNumber;vi++)
@@ -205,7 +208,7 @@ int main(int argc, char* argv[])
 		string tr=names_of_groups[vi];
 		ofstream out(("ga_"+tr+".dat").c_str(), ios::out);
 		out << "betta M11 M12 M13 M14 M21 M22 M23 M24 M31 M32 M33 M34 M41 M42 M43 M44"<<endl;
-		out << to_string(BettaNumber) << " " << to_string(ThetaNumber) << " " << to_string(dBettaRad/Rad) << " " << to_string(dt/Rad)<<endl;
+		//out << to_string(BettaNumber) << " " << to_string(ThetaNumber) << " " << to_string(dBettaRad/Rad) << " " << to_string(dt/Rad)<<endl;
 		out.close();
 	}
 
@@ -303,7 +306,7 @@ int main(int argc, char* argv[])
 					m[1][0] = 0.0; m[1][2] = 0.0;	m[1][3] = 0.0;
 					m[2][0] = 0.0; m[2][1] = 0.0;	m[2][3] = 0.0;
 					m[3][0] = 0.0; m[3][1] = 0.0;	m[3][2] = 0.0;
-					res <<" "<< Betta_i << " ";
+					res <<" "<< bettaRad/Rad << " ";
 					res << m;
 					res << endl;
 					m_tot+=m;
@@ -335,7 +338,7 @@ int main(int argc, char* argv[])
 	//----------------------------------------------------------------------------
 	cout << "\n\nTotal time of calculation = " << tm/CLK_TCK << " seconds";
 	cout << "\nAll done. Please, press any key.";
-	getch();
+	//getch();
 
 	return 0;
 }
@@ -370,9 +373,11 @@ void Handler(Beam& bm)
 		throw " No one trajectory!";
 	if (!CurrentSegment.group_mask[vi]) return;
 
-	double ctetta = bm.r*k;
-
-	if (ctetta < 0.17364817766693034885171662676931) return;
+	if (perpend_diff!=2)
+	{
+		double ctetta = bm.r*k;
+		if (ctetta < 0.17364817766693034885171662676931) return;
+	}
 
 	bm.F = bm.e;
 	bm.T = bm.F%bm.r;

@@ -1,20 +1,20 @@
-15      //0 the prism height
-75      //1 the prism diametr
-1.31    //2 the real part of refraction index
-15       //3 угол "BettaMin"
-35.5       //4 угол "BettaMax"
-15      //5 количество шагов по бетта
+5    //0  the prism radius
+2.84 //1  the prism semiheight
+1.3116   //2 the real part of refraction index
+0       //3 угол "BettaMin"
+20       //4 угол "BettaMax"
+300      //5 количество шагов по бетта
 1       //6 увеличиваем диапазон по гамма_лим
 9       //7 не используется
-30      //8 количество шагов по гамма: вправо и лево.
+821      //8 количество шагов по гамма на отрезок. 
 5       //9 the number of the internal reflections for every beams
-10      //10 точность 
-0.532   //11 длина волны
+10      //10 точность
+0.532 //11 длина волны
 0.25    //12 радиус окрестности "направления назад"
 12      //13 количество разбиений для Tetta
 29      //14 количество разбиений для Fi
-0       //15 0 - расчет для "наклонного" экрана, 1 - для "плоского"
-4       //16 the number of trajectories(д.б. >0 && <=24)
+0       //15 0 - расчет для "наклонного" экрана, 1 - для "плоского", 3 - для GOIE
+4       //16 the number of trajectories. does not mean. takes from map.dat
 0//
 0 7 0//
 0 6 7 0//
