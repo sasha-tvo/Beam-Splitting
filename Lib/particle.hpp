@@ -37,6 +37,26 @@ public:
 	void     SetFacets(void);   // sets facets of prism
 };
 
+class DeformatedPrism : public Crystal {
+	double w, h;       ///< sizes of prism: w - radius and h - half height
+	double tt, ps, fi, // orientation of prism
+		   ang;        // the angle od deformation (in degree)
+	unsigned int type; // type of defornation
+	double  Third(void) { throw " Prism::Third(): Error! "; }
+	double  Forth(void) { throw " Prism::Forth(): Error! "; }
+public:
+	// constructor and destructor
+	DeformatedPrism(const complex& r, double W, double H, unsigned int _type, double _ang, unsigned int Itr, Point3D _k, Point3D _Ey) :
+		Crystal(r,12,8,6,Itr,_k, _Ey), w(W), h(H), tt(0), ps(0), fi(0), type(_type), ang(_ang)
+		{ this->SetVertices(); this->SetFacets(); }
+	virtual  ~DeformatedPrism(void) {}
+	// parameters
+	double   First(void)  { return this->w; }
+	double   Second(void) { return this->h; }
+	void     SetVertices(void); // sets vertices of prism
+	void     SetFacets(void);   // sets facets of prism
+};
+
 ///This class defines the pyramid
 class Pyramid : public Crystal {
 	double w, h;       ///< sizes of Pyramid: w - radius and h - half height

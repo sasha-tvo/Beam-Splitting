@@ -4,6 +4,9 @@
 #ifndef _GLIBCXX_LIST
  #include<list>
 #endif
+
+#include <string>
+
 /** @addtogroup Tracer Beam splitting algorithm
  * @{
  */
@@ -23,14 +26,17 @@ class Chain {
 public:
 	std::list<unsigned int> Ch;
 	unsigned int sz;
+	std::string path = "";
+
 	Chain (const std::list<unsigned int>& _Ch) :
-		Ch(_Ch) { sz = this->Ch.size(); };
+		Ch(_Ch) { sz = this->Ch.size(); path = PathChain(); };
 	virtual	~Chain() {};	
 	unsigned int  Size(void) const { return this->sz; }
 	std::list<unsigned int>::const_iterator  Begin(void) const
 		{ return this->Ch.begin(); }
 	std::list<unsigned int>::const_iterator  End(void) const
 		{ return this->Ch.end(); }
+	std::string PathChain(void);
 };
 
 /** @}
