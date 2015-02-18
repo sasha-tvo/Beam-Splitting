@@ -21,8 +21,8 @@ using namespace std;
 Crystal* Body = NULL;						///< Crystal particle
 uint			KoP,						///< Kind of particle
 				AoP56,						///< Flag, 1 means angle of tip 56 deg, 0 means sizes of tip defined in data file
-				ThetaNumber,				///< Total number of steps by Theta in output file
-				PhiNumber,					///< Total number of steps by Phi in output file
+//				ThetaNumber,				///< Total number of steps by Theta in output file
+//				PhiNumber,					///< Total number of steps by Phi in output file
 				Itr,						///< Maximal number of internal reflection for every beam
 				EDF;						///< EDF = 1 means to extract the delta-function in forward direction, EDF = 0 otherwise
 int				GammaNumber,				///< Number of steps for Gamma rotation
@@ -38,7 +38,8 @@ double			Radius,						///< Radius of the particle
 				SizeBin,					///< The size of the bin for Theta angle (radians)
 				betta_min_Rad,				///< Initial Betta angle
 				betta_max_Rad,				///< Final Betta angle
-				GammaLimmExtendedCoeff,		///< Coeffitient by which Gamma Limm will be extended
+				//GammaLimmExtendedCoeff,		///< Coeffitient by which Gamma Limm will be extended
+				Def_Angle,					///< The angle of particle deformation
 				lm,							///< Wave Length
 				ConusGrad,					///< Conus in backscattering (grad)
 				ConusRad,					///< Conus in backscattering (rad)
@@ -69,8 +70,8 @@ struct Gamma_segments
 
 const uint		NumberOfParameters = 16;		///< Number of lines in data files, except trajectories
 double			params[NumberOfParameters];		///< Array of input data
-double			NormGammaAngle = 	0,			///< Normalize coefficient for Gamma
-				NormBettaAngle =  	0;			///< Normalize coefficient for Betta
+//double			NormGammaAngle = 	0,			///< Normalize coefficient for Gamma
+//				NormBettaAngle =  	0;			///< Normalize coefficient for Betta
 const double	Rad = M_PI/180.;				///< Grad to Rad coefficient
 double			df = 0.0,						///< dPhi
 				dt = 0.0;						///< dTheta
@@ -135,7 +136,7 @@ int main(int argc, char* argv[])
 		getch(); return 1;
 	}
 
-	KoP =					0; //Only hexagonal
+	//KoP =					0; //Only hexagonal
 	AoP56 =					0; // No Tip
 	Halh_Height =			params[1]/1.0;
 	Radius =				params[0]/1.0;
@@ -143,13 +144,14 @@ int main(int argc, char* argv[])
 	betta_min_Rad =			params[3]*Rad;
 	betta_max_Rad =			params[4]*Rad;
 	BettaNumber =			params[5];
-	GammaLimmExtendedCoeff = params[6];
+	KoP	=					params[6];
+	Def_Angle =				params[7];
 	GammaNumber =			params[8];
 	Itr =					params[9];
 	lm =					params[11];
 	ConusGrad =				params[12];
-	ThetaNumber =			params[13];
-	PhiNumber =				params[14];
+//	ThetaNumber =			params[13];
+//	PhiNumber =				params[14];
 	perpend_diff =			(int) params[15];
 
 	if (Halh_Height<=0 || Radius<=0 || NumberOfTrajectory==0)
@@ -166,12 +168,39 @@ int main(int argc, char* argv[])
 	#endif
 	clock_t tm = clock();
 
+	double Def_Angle_lim=90;
+	double norm = 1.0/(M_PI/3.0);
+	switch(KoP)
+	{
+		case 0: break;
+		case 1: Def_Angle_lim = atan(Radius/(2.0*Halh_Height))/Rad; break;
+		case 2: Def_Angle_lim = atan(Halh_Height/(2.0*Radius))/Rad; norm = 1.0/(2.0*M_PI);break;
+		case 3: Def_Angle_lim = atan(Halh_Height/(2.0*Radius))/Rad; norm = 1.0/(2.0*M_PI); break;
+		case 4: Def_Angle_lim = atan(Radius/(2.0*Halh_Height))/Rad; norm = 1.0/(2.0*M_PI); break;
+		default:
+		{
+			cout << "\nError! Incorrect input file. Press any key for exit.(2)";
+			getch(); return 1;
+		}
+	}
+	if(Def_Angle>Def_Angle_lim)
+	{
+		cout << "\nError! Incorrect input file. Press any key for exit.(3)";
+		getch(); return 1;
+	}
+	if(fabs(Def_Angle)<FLT_EPSILON)
+		KoP = 0;
+
 	switch(KoP)
 	{ // choosing the kind of the particle
 		case 0: // the hexagonal prizm
 			Body= new Prism(_RefI, Radius, Halh_Height,Itr,k,Ey);
-			NormGammaAngle = 	M_PI/(3.0*GammaNumber);
-			NormBettaAngle =  	M_PI/(2.0*BettaNumber);
+		break;
+		case 1:
+		case 2:
+		case 3: // the hexagonal prizm
+		case 4:
+			Body= new DeformatedPrism(_RefI, Radius, Halh_Height,KoP,Def_Angle,Itr,k,Ey);
 		break;
 		default:
 			cout << "Wrong kind of particle!";
@@ -182,11 +211,11 @@ int main(int argc, char* argv[])
 
 	double 	gamma_cnt = M_PI/6.0, dBettaRad = 0.0, dGammaRad = 1.0, ConusRad = ConusGrad*Rad;//, Tgamma;
 	if (BettaNumber) dBettaRad = (betta_max_Rad-betta_min_Rad)/(double)BettaNumber;
-	if (ThetaNumber) dt = ConusRad/(double)ThetaNumber;
-	if (PhiNumber) df = m_2pi/(double)(PhiNumber+1);
+//	if (ThetaNumber) dt = ConusRad/(double)ThetaNumber;
+//	if (PhiNumber) df = m_2pi/(double)(PhiNumber+1);
 
-	string  folder_name = "Data", fRes = folder_name,
-		str = to_string(ConusGrad)+" "+to_string(PhiNumber)+" "+to_string(ThetaNumber);
+	string  folder_name = "Data", fRes = folder_name;//,
+	//	str = to_string(ConusGrad);//+" "+to_string(PhiNumber)+" "+to_string(ThetaNumber);
 
 	dir.mkdir(QString::fromStdString(fRes));
 	dir.cd(QString::fromStdString(fRes));
@@ -227,7 +256,7 @@ int main(int argc, char* argv[])
 
 	ofstream out("out.dat", ios::out);
 	out.close();	
-	double norm = 1.0/(M_PI/3.0);
+
 	//double
 	try
 	{
@@ -482,7 +511,7 @@ int ReadFile(char* name, double* params, uint n)
 		bt_max_rad*=Rad;
 		gm_min_rad*=Rad;
 		gm_max_rad*=Rad;
-		dbt_rad=bt_max_rad/((float)bt_c);
+		dbt_rad=bt_max_rad/((float)(bt_c-1));
 		dgm_rad=(gm_max_rad-gm_min_rad)/(float)gm_c;
 		for (uint i=0;i<bt_c;i++)
 		{
@@ -490,7 +519,7 @@ int ReadFile(char* name, double* params, uint n)
 			segment seg;
 			Gamma_segments gm_seg;
 			map_f >>t;
-			gm_seg.betta=((float)t+0.5)*dbt_rad;
+			gm_seg.betta=((float)t)*dbt_rad;
 			for (uint j=0; j<MuellerMatrixNumber;j++)
 			{
 				gm_seg.group_mask.push_back(false);
