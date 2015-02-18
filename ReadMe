@@ -1,3 +1,4 @@
 Physical optics approximation.
 
-Takes the map into account.
+Start point to the program of calculating exact BS matrix for deformed particles. 
+It takes the map into account.
