@@ -37,6 +37,108 @@ void Prism::SetFacets(void)
 		q=this->Gr[i]; q[0]=q[4]=i-1; q[1]=i+5; q[3]=i%6; q[2]=q[3]+6; q[5]=q[6]=-1;
 	}
 }
+//------------------------------------------------------------------------------
+// the initialization of prism vertices
+void DeformatedPrism::SetVertices(void)
+{
+	const double bf1 = 0.5*this->w, bf2 = Sqrt3_2*this->w;
+
+	switch(this->type) {
+	   case 1: {
+		this->p[9].x = -(this->p[6].x = this->w);
+		this->p[3].y = this->p[9].y =   this->p[0].y = this->p[6].y = 0;
+		this->p[6].z = this->p[9].z = -(this->p[0].z = this->p[3].z = this->h);
+
+		this->p[8].x = -(this->p[7].x = bf1);
+		this->p[8].y = this->p[7].y = bf2;
+		this->p[7].z = this->p[8].z = -(this->p[1].z = this->p[2].z = this->h);
+
+		this->p[10].x = -(this->p[11].x = bf1);
+		this->p[10].y = this->p[11].y = -bf2;
+		this->p[10].z = this->p[11].z = -(this->p[4].z = this->p[5].z = this->h);
+
+		double _w = this->w-2.0*this->h*tan(this->ang*M_PI/180.0),
+			   _bf1 = 0.5*_w, _bf2 = Sqrt3_2*_w;
+
+		this->p[3].x = -(this->p[0].x = _w);
+		this->p[2].x = this->p[4].x  = -(this->p[1].x = this->p[5].x = _bf1);
+		this->p[2].y = this->p[1].y = _bf2;
+		this->p[4].y = this->p[5].y = -_bf2;
+		break;
+	   }
+	   case 2: {
+		this->p[3].x = this->p[9].x  = -(this->p[0].x = this->p[6].x = this->w);
+		this->p[3].y = this->p[9].y  =   this->p[0].y = this->p[6].y = 0;
+		this->p[6].z = this->p[9].z  = -(this->p[3].z = this->h);
+
+		this->p[2].x = this->p[8].x  = -(this->p[1].x = this->p[7].x = bf1);
+		this->p[2].y = this->p[8].y  =   this->p[1].y = this->p[7].y = bf2;
+		this->p[7].z = this->p[8].z  = -this->h;
+
+		this->p[4].x  = this->p[10].x = -(this->p[5].x = this->p[11].x = bf1);
+		this->p[4].y  = this->p[10].y =   this->p[5].y = this->p[11].y = -bf2;
+		this->p[10].z = this->p[11].z = -this->h;
+
+		double _w = this->w*tan(this->ang*M_PI/180.0);
+		this->p[0].z = this->h-2.0*_w;
+		this->p[1].z = this->p[5].z = this->h-1.5*_w;
+		this->p[2].z = this->p[4].z = this->h-0.5*_w;
+		break;
+	   }
+	   case 3: {
+		this->p[3].x = this->p[9].x  = -(this->p[0].x = this->p[6].x = this->w);
+		this->p[3].y = this->p[9].y  =   this->p[0].y = this->p[6].y = 0;
+
+		this->p[2].x = this->p[8].x  = -(this->p[1].x = this->p[7].x = bf1);
+		this->p[2].y = this->p[8].y  =   this->p[1].y = this->p[7].y = bf2;
+
+		this->p[4].x  = this->p[10].x = -(this->p[5].x = this->p[11].x = bf1);
+		this->p[4].y  = this->p[10].y =   this->p[5].y = this->p[11].y = -bf2;
+
+		double _w = this->w*tan(this->ang*M_PI/180.0);
+
+		this->p[9].z = -(this->p[0].z = this->h-2.0*_w);
+		this->p[8].z = this->p[10].z = -(this->p[1].z = this->p[5].z = this->h-1.5*_w);
+		this->p[7].z = this->p[11].z = -(this->p[2].z = this->p[4].z = this->h-0.5*_w);
+
+		this->p[6].z  = -(this->p[3].z = this->h);
+		break;
+	   }
+	   case 4: {
+		this->p[3].x = this->p[9].x  = -(this->p[0].x = this->p[6].x = this->w);
+		this->p[3].y = this->p[9].y  =   this->p[0].y = this->p[6].y = 0;
+		this->p[6].z = this->p[9].z  = -(this->p[0].z = this->p[3].z = this->h);
+
+		this->p[2].x = this->p[8].x  = -(this->p[1].x = this->p[7].x = bf1);
+		this->p[2].y = this->p[8].y  =   this->p[1].y = this->p[7].y = bf2;
+		this->p[7].z = this->p[8].z  = -(this->p[1].z = this->p[2].z = this->h);
+
+		this->p[4].x  = this->p[10].x = -(this->p[5].x = this->p[11].x = bf1);
+		this->p[4].y  = this->p[10].y =   this->p[5].y = this->p[11].y = -bf2;
+		this->p[10].z = this->p[11].z = -(this->p[4].z = this->p[5].z = this->h);
+
+		double tmp = 2.0*this->h*tan(this->ang*M_PI/180.0);
+
+		this->p[0].x -= 0.5*tmp;
+		this->p[0].y -= Sqrt3_2*tmp;
+		this->p[1].x -= tmp;
+		break;
+	   }
+	  }
+}
+
+// the initialization of prism facets
+void DeformatedPrism::SetFacets(void)
+{
+	int* q;
+	// the basal facets
+	q = this->Gr[0]; q[0]=0; q[1]=1; q[2]=2; q[3]=3; q[4]=4; q[5]=5; q[6]=0;
+	q = this->Gr[7]; q[0]=6; q[1]=11; q[2]=10; q[3]=9; q[4]=8; q[5]=7; q[6]=6;
+	// the rectangular facets
+	for(int i=1; i<=6; i++) {
+		q=this->Gr[i]; q[0]=q[4]=i-1; q[1]=i+5; q[3]=i%6; q[2]=q[3]+6; q[5]=q[6]=-1;
+	}
+}
 //==============================================================================
 void Pyramid::SetVertices(void)
 {

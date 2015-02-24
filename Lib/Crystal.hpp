@@ -48,7 +48,7 @@ public:
 	unsigned int **Facets; ///<Mask for calculation only specified trajectories
 	BeamSplitting(unsigned int _Itr, unsigned int _NoF, Point3D _k, Point3D _Ey) :
         Itr(_Itr), NoF(_NoF), k(_k), Ey(_Ey), Ep(2e-12), d(10000.0), S_eps(0.01)
-		{ this->AllocMem();};	
+		{ this->AllocMem();};
 	~BeamSplitting (void) 
 		{ this->FreeMem();};
 };

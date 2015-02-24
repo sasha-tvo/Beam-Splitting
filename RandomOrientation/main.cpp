@@ -23,7 +23,6 @@ using namespace std;
 
 Crystal* Body = NULL;						///< Crystal particle
 unsigned int	KoP,						///< Kind of particle
-				AoP56,						///< Flag, 1 means angle of tip 56 deg, 0 means sizes of tip defined in data file
 				GammaNumber,				///< Number of steps for Gamma rotation
 				BettaNumber,				///< Number of steps for Betta rotation
 				Itr,						///< Maximal number of internal reflection for every beam
@@ -36,15 +35,13 @@ unsigned int	Sorting=0,					///< Sorting = 0 if all trajectories are taking into
 				gamma_j;
 double			Radius,						///< Radius of the particle				
 				Halh_Height,				///< Half height of the particle
-				TipRadius,					///< Radius of the tip (if AoP56 = 0)
-				TipHeight,					///< Height of the tip (if AoP56 = 0)
+				Def_Angle,					// Angle of deformation
 				P = 0.0,					///< Probability distribution for Betta angle
 				cos_angle,
 				lm,
 				T;							///< Max tilt angle
 Arr2D			mxd(0,0,0,0);				///< An array of output Mueller matrixes
-matrix			back(4,4),					///< Mueller matrix in backward direction
-				forw(4,4);					///< Mueller matrix in forward direction 
+
 list<Chain>	mask;							///< List of trajectories to take into account
 vector<Chain> Lbm;
 vector<matrix>	nc,
@@ -129,14 +126,16 @@ int main(int argc, char* argv[])
 	dir.cd(QCurDir);
 	QDir::setCurrent(dir.absolutePath());
 
-	unsigned int NumberOfParameters = 14;	///< Number of lines in data files, except trajectories
-	double params[NumberOfParameters];		///< array of input data	
+	unsigned int NumberOfParameters = 14,	///< Number of lines in data files, except trajectories
+				 GammaMaxAngle,			    // Максимальный угол поворота по углу гамма (для хаотич. ориентации)
+				 BettaMaxAngle;				// Максимальный угол поворота по углу бетта	(для хаотич. ориентации)
+	double params[NumberOfParameters];		///< array of input data
 	// read parameters from data file
 	try
 	{
 		if(ReadFile((char*)"params.dat", params, NumberOfParameters))
 		{
-			cout << "\nError! Incorrect input file. Press any key for exit.";
+			cout << "\nError! Incorrect input file. Press any key for exit. (1)";
 			getch(); return 1;
 		}
 	}
@@ -146,60 +145,80 @@ int main(int argc, char* argv[])
 		getch(); return 1;
 	}
 
+	//---------------------------------------------------------------------------
 	KoP =			params[0];
-	AoP56 =			params[1];
+	Def_Angle =		params[1];
 	Radius =		params[2];
 	Halh_Height =	params[3];
-	TipRadius =		params[4];
-	TipHeight =		params[5];
 	_RefI =			complex(params[6],0.0);
-	cos_angle =		cos(M_PI/2.0-params[7]*M_PI/180.0);
+	cos_angle =		cos(params[7]*M_PI/180.0);
 	GammaNumber =	params[8];
 	T =				params[9];
 	BettaNumber =	params[10];
 	lm =			params[11];
-	F_Mt =			params[13];
+	F_Mt =			params[13]; // Параметр указывает записывать ли "картины" номеров колец и
+								// дифракционного вклада (для более детального исследования)
+
+	double	NormGammaAngle =	0.0,
+			NormBettaAngle =	0.0,
+			Def_Angle_lim = 90.0,
+			Rad = M_PI/180.0;
+
+	switch(KoP) {
+	  case 0: break;
+	  case 1: Def_Angle_lim = atan(Radius/(2.0*Halh_Height))/Rad; break;
+	  case 2: Def_Angle_lim = atan(Halh_Height/(2.0*Radius))/Rad; break;
+	  case 3: Def_Angle_lim = atan(Halh_Height/(2.0*Radius))/Rad; break;
+	  case 4: Def_Angle_lim = atan(Radius/(2.0*Halh_Height))/Rad; break;
+	  default: {
+		 cout << "\nError! Incorrect input file. Press any key for exit.(2)";
+		 getch(); return 1;
+	  }
+	 }
+	 if(Def_Angle>Def_Angle_lim) {
+	  cout << "\nError! Incorrect input file. Press any key for exit.(3)";
+	  getch(); return 1;
+	 }
+
+	if(fabs(Def_Angle)<FLT_EPSILON)
+		KoP = 0;
 	//----------------------------------------------------------------------------
-	double
-		NormAng =			sqrt(3.0)/(2.0*tan(0.48869219055841228153863341517681)),
-		NormGammaAngle =	0.0,
-		NormBettaAngle =	0.0;
-	//----------------------------------------------------------------------------
-	double hp;
-	switch(KoP)
-	{ // choosing the kind of the particle
-		case 0: // the hexagonal prizm
-			Body= new Prism(_RefI, Radius, Halh_Height, Itr, k, Ey);
-			NormGammaAngle =	M_PI/(3.0*GammaNumber);
-			NormBettaAngle =	M_PI/(2.0*BettaNumber);
+	switch(KoP)	{ // choosing the kind of the particle
+	 case 0: { // the perfect hexagonal prizm
+		Body = new Prism(_RefI, Radius, Halh_Height, Itr, k, Ey);
+		GammaMaxAngle = 60;
+		BettaMaxAngle = 90;
 		break;
-		case 1: // the hexagonal bullet
-			hp = AoP56 ? NormAng*Radius : TipHeight;
-			Body = new Bullet(_RefI, Radius, Halh_Height, hp, Itr, k, Ey);
-			NormGammaAngle =	M_PI/(3.0*GammaNumber);
-			NormBettaAngle =	M_PI/(BettaNumber);
+	 }
+	 case 1: {
+		GammaMaxAngle = 60;
+		BettaMaxAngle = 180;
+		Body = new DeformatedPrism(_RefI, Radius, Halh_Height, KoP, Def_Angle, Itr, k, Ey);
 		break;
-		case 2: // the hexagonal pyramid
-			hp = AoP56 ? NormAng*Radius : Halh_Height;
-			Body = new Pyramid(_RefI, Radius, hp, Itr, k, Ey);
-			NormGammaAngle =	M_PI/(3.0*GammaNumber);
-			NormBettaAngle =	M_PI/(BettaNumber);
-		break;
-		case 3: // the hexagonal tapered prizm
-			hp = AoP56 ? NormAng*(Radius-TipRadius) : TipHeight;
-			Body = new TaperedPrism(_RefI, Radius, Halh_Height, TipRadius,
-									Halh_Height-hp, Itr, k, Ey);
-			NormGammaAngle =	M_PI/(3.0*GammaNumber);
-			NormBettaAngle =	M_PI/(BettaNumber);
-		break;
-		case 4: // cup
-			hp = AoP56 ? NormAng*(Radius-TipRadius) : TipHeight;
-			Body = new Cup(_RefI, Radius, Halh_Height, TipRadius, hp, Itr, k,
-						   Ey);
-			NormGammaAngle =	M_PI/(3.0*GammaNumber);
-			NormBettaAngle =	M_PI/(BettaNumber);
-		break;
-	}
+	 }
+	 case 2: {
+	   GammaMaxAngle = 360;
+	   BettaMaxAngle = 180;
+	   Body = new DeformatedPrism(_RefI, Radius, Halh_Height, KoP, Def_Angle, Itr, k, Ey);
+	   break;
+	 }
+	 case 3: {
+	   GammaMaxAngle = 360;
+	   BettaMaxAngle = 90;
+	   Body = new DeformatedPrism(_RefI, Radius, Halh_Height, KoP, Def_Angle, Itr, k, Ey);
+	   break;
+	 }
+	 case 4: {
+	   GammaMaxAngle = 360;
+	   BettaMaxAngle = 180;
+	   Body = new DeformatedPrism(_RefI, Radius, Halh_Height, KoP, Def_Angle, Itr, k, Ey);
+	   break;
+	 }
+   }
+
+	NormGammaAngle = (double)GammaMaxAngle*Rad/(double)GammaNumber;
+	NormBettaAngle = (double)BettaMaxAngle*Rad/(double)(BettaNumber-1);
+
 
 	nc.clear();
 	dif.clear();
@@ -242,8 +261,31 @@ int main(int argc, char* argv[])
 
 	//--------------------------------------------------------------------------
 	double p_Betta[BettaNumber], dcos[BettaNumber];
-	for (uint i=0; i<BettaNumber; i++)
+	if(!KoP || KoP==3) {
+	 for (uint i=0; i<BettaNumber; i++)
+	 {
+		double betta = (double)i*NormBettaAngle;
 		p_Betta[i] = 1.0;
+		if (!i)
+			dcos[i] = 1.0-cos(0.5*NormBettaAngle);
+		else
+			if(i==(BettaNumber-1))
+				dcos[i] = cos(betta-0.5*NormBettaAngle)-cos(betta);
+			else
+				dcos[i] = cos(betta-0.5*NormBettaAngle)-cos(betta+0.5*NormBettaAngle);
+	 }
+	}
+	else {
+	 for (uint i=0; i<BettaNumber; i++)
+	 {
+	   double betta = (double)i*NormBettaAngle;
+	   p_Betta[i] = 0.5;
+	   if(!i || i==(BettaNumber-1))
+		dcos[i] = 1.0-cos(0.5*NormBettaAngle);
+	   else
+		dcos[i] = cos(betta-0.5*NormBettaAngle)-cos(betta+0.5*NormBettaAngle);
+	 }
+	}
 
 	if (fabs(T)>FLT_EPSILON)
 	{
@@ -285,18 +327,18 @@ int main(int argc, char* argv[])
 		{
 			if(!betta_i)
 				cout << "\n" << 0;
-			betta = (betta_i+0.5)*NormBettaAngle;
+			betta = (double)betta_i*NormBettaAngle;
+			P = p_Betta[betta_i]*dcos[betta_i];
 			for(gamma_j=0; gamma_j<GammaNumber; gamma_j++)
 			{
 				gamma = (gamma_j+0.5)*NormGammaAngle;
 				Body->ChangePosition(betta, gamma, 0.0);
-				P = p_Betta[betta_i]*sin(betta);
 				s += P*Body->FTforConvexCrystal(Handler);
 				if(!(gamma_j%gamma_25p)) cout<<'.';
 			}
 			unsigned int size = Lbm.size();
 			ofstream f("log.dat", ios::app);
-			f << endl << betta_i << " " << betta/M_PI*180.0 << " " << size;
+			f << endl << betta_i << " " << betta/Rad << " " << size;
 			f.close();
 			cout << endl << 100.0*(betta_i+1)/(double)BettaNumber;
 		}
@@ -307,7 +349,7 @@ int main(int argc, char* argv[])
 		getch(); return 1;
 	}
 
-	const double NRM =2.0*NumOrient/M_PI;
+	const double NRM = GammaNumber;
 	//----------------------------------------------------------------------------
 	if(F_Mt)
 	{
@@ -364,7 +406,6 @@ int main(int argc, char* argv[])
 	//--------------------------------------------------------------------------
 	ofstream sort_res("sort.dat", ios::out);
 	sort_res << "trajectory\tenergy\tnum" << endl;
-	// ищем 50 траекторий с максимальным вкладом + их взаимные траектории(если есть)
 	int i = 0;
 	do
 	{
@@ -403,7 +444,9 @@ int main(int argc, char* argv[])
 
 	ofstream g("log.dat", ios::app);
 	g << "\nTotal time of calculation = " << t << " seconds";
+	g << "\ns = " << s/NRM;
 	g.close();
+
 
 	cout << "\nTotal time of calculation = " << t << " seconds";
 	cout << "\nAll done. Please, press any key.";
@@ -414,6 +457,10 @@ int main(int argc, char* argv[])
 
 void Handler(Beam& bm)
 {
+	// отсеиваем траектории с направлением рассеяния вне окрестности, заданной в файле параметров
+	if((bm.r*k)<cos_angle)
+		return;
+
 	list<unsigned int> facets;
 	for(list<unsigned int>::const_iterator b = bm.BeginP(); b!=bm.EndP(); b++)
 		facets.push_back(*b);
@@ -436,9 +483,7 @@ void Handler(Beam& bm)
 		if(!flag) return;
 	}
 
-	if((bm.r*k)<cos_angle)
-		return;
-	matrix m = Mueller(bm());
+	double M11 = 0.5*norm(bm());
 
 	unsigned int nst = 0; // номер в списке
 	vector<Chain>::iterator c = Lbm.begin();
@@ -487,7 +532,7 @@ void Handler(Beam& bm)
 	double	NumberOfRing = max_ro_n/lm,
 			area = CrossSection(bm),
 			x = M_PI*NumberOfRing,
-			fn = m[0][0]*SQR(area)/lm/lm;
+			fn = M11*SQR(area)/lm/lm;
 
 	if(x>2.2)
 		fn *= 2.6/x/x/x;
@@ -519,17 +564,7 @@ int ReadFile(char* name, double* params, unsigned int n)
 			throw "All values must be positive in data file";
 	}
 
-	switch(int(params[0]))
-	{
-		case 0: _NoF =  8; break;
-		case 1: _NoF = 13; break;
-		case 2: _NoF =  7; break;
-		case 3: _NoF = 20; break;
-		case 4: _NoF = 14; break;
-		case 5: _NoF = 6;  break;
-		case 6: _NoF = 4;  break;
-		case 7: _NoF = 5;  break;
-	}
+	_NoF =  8;
 
 	Itr = params[12];
 
@@ -591,9 +626,9 @@ void MaskAppend(char s[])
 
 void DelFace(void)
 {
-	for(unsigned int i=0;i<_NoF; i++)
+	for(unsigned int i=0;i<Itr+1; i++)
 		delete[] Face[i];
-	delete[] Face;
+	delete Face;
 }
 //==============================================================================
 
@@ -603,7 +638,7 @@ void ShowTitle(void)
 	cout << "*************************************************************\
 			\nLight Scattering by Nonspherical Particles.                 \
 			\n(c)Group of Wave Dispersion Theory,                         \
-			\n   Institute of Atmospheric Optics RAS, Tomsk, Russia, 2014 \
+			\n   Institute of Atmospheric Optics RAS, Tomsk, Russia, 2015 \
 			\n*************************************************************\n";
 }
 //==============================================================================

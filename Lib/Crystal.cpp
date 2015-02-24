@@ -162,7 +162,7 @@ bool Crystal::Intersection
 			throw "Crystal::Intersection : Error!";
 		} 
 		#endif
-		const double e = AreaOfConvexPolygon(intersection);
+		//const double e = AreaOfConvexPolygon(intersection);
         //if(e < S_eps) return false;
 		Result = this->Retrieve(intersection, i, fl);
 		//------------------------------------------------------------------------
