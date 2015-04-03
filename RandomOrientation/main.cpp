@@ -10,7 +10,7 @@
 #include <time.h>
 #include <math.h>
 
-//Axilary functions
+//Axillary functions
 #include "..\Lib\trajectory.hpp"
 #include "..\Lib\PhysMtr.hpp"
 #include "..\Lib\Mueller.hpp"
@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
 		
 	}
 
-	// the arrays for exact backscattring and forwardscattering Mueller matrices
+	// the arrays for exact backscattering and forwardscattering Mueller matrices
 	back.Fill(0); forw.Fill(0);
 
 	// the array for the Mueller matrices dependent from zenith angle
@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
 
 	cout << "\nTotal time of calculation = " << t/CLK_TCK << " seconds";
 
-	//Analitical averaging over alpha angle
+	//Analytical averaging over alpha angle
 	//----------------------------------------------------------------------------
 	double b[3], f[3];	
 	b[0] = back[0][0]; b[1] = (back[1][1]-back[2][2])/2.; b[2] = back[3][3];
