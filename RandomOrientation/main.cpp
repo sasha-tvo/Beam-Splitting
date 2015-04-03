@@ -366,7 +366,7 @@ int ReadFile(char* name, double* params, unsigned int n)
 		case 6: _NoF = 4; break;
 		case 7: _NoF = 5; break;
 	}
-	Itr = params[11];
+	Itr = params[10];
 
 	if(!in.eof()) {
 	in.getline(buf, size);
