@@ -27,15 +27,14 @@ Crystal* Body = NULL;						///< Crystal particle
 unsigned int 	KoP,						///< Kind of particle
 				AoP56,						///< Flag, 1 means angle of tip 56 deg, 0 means sizes of tip defined in data file
 				GammaNumber,				///< Number of steps for Gamma rotation
-				BettaNumber,				///< Number of steps for Betta rotation
+				BetaNumber,				///< Number of steps for Betta rotation
 				ThetaNumber,				///< Total number of bins in output file
 				Itr,						///< Maximal number of internal reflection for every beam
 				EDF,						///< EDF = 1 means to extract the delta-function in forward direction, EDF = 0 otherwise
 				isNotRandom;				///< if 1 particle rotates by discret steps, if 0 particle rotates with random function
 complex 		_RefI(0,0);					///< Refraction index
 unsigned int 	Sorting=0,					///< Sorting = 0 if all trajectories are taking into account, otherwise Sorting is equal to number of trajectories to calculate
-				_NoF,						///< Number of facets of the crystal
-				**Face;						///< An array for masking the trajectories which are out of interest
+				_NoF;						///< Number of facets of the crystal
 double			Radius,						///< Radius of the particle				
 				Halh_Height,				///< Half height of the particle
 				TipRadius,					///< Radius of the tip (if AoP56 = 0)
@@ -45,7 +44,7 @@ double			Radius,						///< Radius of the particle
 Arr2D 			mxd(0,0,0,0);				///< An array of output Mueller matrixes
 matrix 			back(4,4),					///< Mueller matrix in backward direction 
 				forw(4,4);					///< Mueller matrix in forward direction 
-list<Chain> mask;							///< List of trajectories to take into account
+list<Chain>		mask;						///< List of trajectories to take into account
 Point3D			k(0,0,1),					///< Direction on incident wave
 				Ey(0,1,0);					///< Basis for polarization characteristic of light
 //==============================================================================
@@ -59,10 +58,6 @@ int ReadFile(char* name, double* params, unsigned int n);
 void MaskAppend(char s[], unsigned int n);
 /// Shows the title
 void ShowTitle(void);
-/// Shows current time
-void ShowCurrentTime(void);
-/// Deletes \b **Face structure
-void DelFace(void);
 
 
 /// Main()
@@ -94,6 +89,7 @@ int main(int argc, char* argv[])
 		cout << endl << s << "\nPress any key.";
 		getch(); return 1;
 	}
+	cout << "OK \n";
 	//Assign the parameters from data file.
 	//---------------------------------------------------------------------------
 	KoP = 			params[0];
@@ -102,9 +98,9 @@ int main(int argc, char* argv[])
 	Halh_Height = 	params[3];
 	TipRadius = 	params[4];
 	TipHeight = 	params[5];
-	_RefI =			complex(params[6],0);
+	_RefI =			complex(params[6],0.0);
 	GammaNumber = 	params[7];
-	BettaNumber = 	params[8];
+	BetaNumber = 	params[8];
 	ThetaNumber = 	params[9];
 	Itr = 			params[10];
 	EDF = 			params[11];
@@ -113,42 +109,44 @@ int main(int argc, char* argv[])
 	//----------------------------------------------------------------------------
 	double  
 		NormAng = 			sqrt(3.0)/(2.0*tan(0.48869219055841228153863341517681)), 
-		NormGammaAngle =	0,
-		NormBettaAngle =	0;
+		NormGammaAngle =	0.0,
+		NormBetaAngle =	0.0;
 		SizeBin = 			M_PI/ThetaNumber; // the size of the bin (radians)
 	//----------------------------------------------------------------------------
 	double hp;
 	switch(KoP) { // choosing the kind of the particle
+		// For discrete angle steps we take the particle symmetry into account by NormGammaAngle and NormBettaAngle
+		// for random orientation no symmetry is taken into account
 		case 0: // the hexagonal prizm
 			Body= new Prism(_RefI, Radius, Halh_Height,Itr,k,Ey);
 			NormGammaAngle = 	M_PI/(3.0*GammaNumber);
-			NormBettaAngle =  	M_PI/(2.0*BettaNumber);
+			NormBetaAngle =  	M_PI/(2.0*BetaNumber);
 		break;
 		case 1: // the hexagonal bullet
 			hp = AoP56 ? NormAng*Radius : TipHeight;
 			Body = new Bullet(_RefI, Radius, Halh_Height, hp,Itr,k,Ey);
 			NormGammaAngle = 	M_PI/(3.0*GammaNumber);
-			NormBettaAngle =  	M_PI/(BettaNumber);
+			NormBetaAngle =  	M_PI/(BetaNumber);
 		break;
 		case 2: // the hexagonal pyramid
 			hp = AoP56 ? NormAng*Radius : Halh_Height;
 			Body = new Pyramid(_RefI, Radius, hp,Itr,k,Ey);
 			NormGammaAngle = 	M_PI/(3.0*GammaNumber);
-			NormBettaAngle =  	M_PI/(BettaNumber);			
+			NormBetaAngle =  	M_PI/(BetaNumber);
 		break;
 		case 3: // the hexagonal tapered prizm
 			hp = AoP56 ? NormAng*(Radius-TipRadius) : TipHeight;
 			Body = new TaperedPrism(_RefI,
 									Radius, Halh_Height, TipRadius, Halh_Height-hp,Itr,k,Ey);
 			NormGammaAngle = 	M_PI/(3.0*GammaNumber);
-			NormBettaAngle =  	M_PI/(BettaNumber);
+			NormBetaAngle =  	M_PI/(BetaNumber);
 		break;
 		case 4: // cup
 			hp = AoP56 ? NormAng*(Radius-TipRadius) : TipHeight;
 			Body = new Cup(_RefI,
 							Radius, Halh_Height, TipRadius, hp,Itr,k,Ey);
 			NormGammaAngle = 	M_PI/(3.0*GammaNumber);
-			NormBettaAngle =  	M_PI/(BettaNumber);
+			NormBetaAngle =  	M_PI/(BetaNumber);
 		break;
 		
 	}
@@ -161,38 +159,38 @@ int main(int argc, char* argv[])
 	mxd.ClearArr();
 
 	Body->Phase() = false;
-	const double NumOrient = GammaNumber*BettaNumber;
+	const double NumOrient = GammaNumber*BetaNumber;
 
 
 	// The main loop
 	//----------------------------------------------------------------------------
 
 	clock_t t = clock();
-	cout << "\nPercent done";
-	double s = 0, tetta, gamma;
+	cout << "\nPercent done \n0% ";
+	double s = 0, beta, gamma;
 	try {
-		for(unsigned int i=0; i<BettaNumber; i++) {
-			if(!i) cout << "\n" << 0;
+		for(unsigned int i=0; i<BetaNumber; i++) {
 			if (isNotRandom)
-				tetta = (i+0.5)*NormBettaAngle;
+				beta = (i+0.5)*NormBetaAngle;
 			for(unsigned int j=0; j<GammaNumber; j++) {
 				if (isNotRandom)
+				{
 					gamma = (j+0.5)*NormGammaAngle;
+					P = sin(beta);
+				}
 				else
 				{
 					gamma=2.0*M_PI*((double)(rand()) / ((double)RAND_MAX+1.0));
-					tetta=acos(((double)(rand()) / ((double)RAND_MAX))*2.0-1.0);
+					beta=acos(((double)(rand()) / ((double)RAND_MAX))*2.0-1.0);
+					P=1.0;
 				}
-				Body->ChangePosition(tetta, gamma,0.0);
-				//P = sin(tetta);
-				P=1.0;
+				Body->ChangePosition(beta, gamma,0.0);
+
 				s += P*Body->FTforConvexCrystal(Handler);
 				if(!(j%100)) cout<<'.';
-			}
-			if(!KoP || KoP==3)
-				cout << "\n" << (i+0.5)*NormBettaAngle/M_PI*200;
-			else
-				cout << "\n" << (i+0.5)*NormBettaAngle/M_PI*100;
+			}			
+			cout << "\n" << (double)(i+1)/(double)BetaNumber*100.0<<"% ";
+
 		}
 	}
 	catch(char* s) {
@@ -208,32 +206,41 @@ int main(int argc, char* argv[])
 	//Analytical averaging over alpha angle
 	//----------------------------------------------------------------------------
 	double b[3], f[3];	
-	b[0] = back[0][0]; b[1] = (back[1][1]-back[2][2])/2.; b[2] = back[3][3];
-	f[0] = forw[0][0]; f[1] = (forw[1][1]+forw[2][2])/2.; f[2] = forw[3][3];
+	b[0] = back[0][0]; b[1] = (back[1][1]-back[2][2])/2.0; b[2] = back[3][3];
+	f[0] = forw[0][0]; f[1] = (forw[1][1]+forw[2][2])/2.0; f[2] = forw[3][3];
 
 	//Integrating
 	//----------------------------------------------------------------------------
 	double D_tot = b[0]+f[0];
-	for(int j=0; j<=ThetaNumber; j++)
+	for(uint j=0; j<=ThetaNumber; j++)
 		D_tot += mxd(0,j,0,0);	
 
 	//Normalizing coefficient
-	const double NRM = 1.0/(4.0*M_PI);
+	double NRM;
+	if (isNotRandom)
+	{
+		NRM=M_PI/((double)NumOrient*2.0);
+	}
+	else
+	{
+		NRM=1.0/(double)NumOrient;
+	}
+	//const double NRM = 1.0/(4.0*M_PI);
 
 	// Extracting the forward and backward peak in a separate file if needed
 	//----------------------------------------------------------------------------
 	if(EDF) {
 		ofstream bck("back.dat", ios::out), frw("forward.dat", ios::out);
-		frw << "M11 m22 m33 m44";
-		bck << "M11 m22 m33 m44";
+		frw << "M11 M22/M11 M33/M11 M44/M11";
+		bck << "M11 M22/M11 M33/M11 M44/M11";
 		if(f[0]<=DBL_EPSILON)
 			frw << "\n0 0 0 0";
 		else
-			frw << "\n" << f[0]/(NRM*(1-cos(SizeBin/2.0))*D_tot) << " " << f[1]/f[0] << " " <<  f[1]/f[0] << " " << f[2]/f[0];
+			frw << "\n" << f[0]*NRM << " " << f[1]/f[0] << " " <<  f[1]/f[0] << " " << f[2]/f[0];
 		if(b[0]<=DBL_EPSILON)
 			bck << "\n0 0 0 0";
 		else
-			bck << "\n" << b[0]/(NRM*(1-cos(SizeBin/2.0))*D_tot) << " " << b[1]/b[0] << " " << -b[1]/b[0] << " " << b[2]/b[0];
+			bck << "\n" << b[0]*NRM << " " << b[1]/b[0] << " " << -b[1]/b[0] << " " << b[2]/b[0];
 		bck.close();
 		frw.close();
 	}
@@ -247,41 +254,39 @@ int main(int argc, char* argv[])
 
 	//Output the matrices
 	ofstream M("M.dat", ios::out), out("out.dat", ios::out);
-	M <<  "tetta M11 m12 m21 m22 m33 m34 m43 m44";
+	M <<  "tetta M11 M12/M11 M21/M11 M22/M11 M33/M11 M34/M11 M43/M11 M44/M11";
 	for(int j=ThetaNumber;j>=0;j--) {
 		double sn;
 		//Special case in first and last step
-		M << '\n' << 180.0/ThetaNumber*(ThetaNumber-j)+(j==0 ?-0.25*180.0/ThetaNumber:0)+(j==ThetaNumber ?0.25*180.0/ThetaNumber:0);
-		sn = (j==0 || j==ThetaNumber) ? 1-cos(SizeBin/2.0) : (cos((j-0.5)*SizeBin)-cos((j+0.5)*SizeBin));
+		M << '\n' << 180.0/ThetaNumber*(ThetaNumber-j)+(j==0 ?-0.25*180.0/ThetaNumber:0)+(j==(int)ThetaNumber ?0.25*180.0/ThetaNumber:0);
+		sn = (j==0 || j==(int)ThetaNumber) ? 1-cos(SizeBin/2.0) : (cos((j-0.5)*SizeBin)-cos((j+0.5)*SizeBin));
 
 		matrix bf = mxd(0,j);
 		if(bf[0][0] <= DBL_EPSILON)
 			M << " 0 0 0 0 0 0 0 0";
 		else            
-			M<<' '<<bf[0][0]/(NRM*sn*D_tot)<<' '
+			M<<' '<<bf[0][0]*NRM/(2.0*M_PI*sn)<<' '
 			<<bf[0][1]/bf[0][0]<<' '<<bf[1][0]/bf[0][0]<<' '<<bf[1][1]/bf[0][0]<<' '
 			<<bf[2][2]/bf[0][0]<<' '<<bf[2][3]/bf[0][0]<<' '<<bf[3][2]/bf[0][0]<<' '<<bf[3][3]/bf[0][0];
 	}
-	M.close();
+	M.close();	
 	//----------------------------------------------------------------------------
 	// Information for log-file
-	out << "\nTotal time of calculation = " << t/CLK_TCK << " seconds";
-	out << "\nTotal number of insident photons = " << s;
+	out << "\nTotal time of calculation = " << t/CLK_TCK << " seconds";	
 	out << "\nTotal number of body orientation = " << NumOrient;
-	out << "\nMean incident energy per orientation = " << s/(NumOrient*m_2pi)*M_PI/2.0;
-	out << "\nMean particle cross section = " << D_tot;
-	out << "\nMean scattered energy per orientation = " << D_tot/m_2pi;
-	out << "\nScattering albedo = " << D_tot*(2*NumOrient/M_PI)/s;
+	out << "\nTotal scattering energy = " << D_tot;
+	out << "\nTotal incoming energy = " << s;
+	out << "\nCross section = " << s*NRM;
 	out.close();
 	//----------------------------------------------------------------------------
 	// some information for user
-	cout << "\nMean incident energy = " << s/(NumOrient*m_2pi)*M_PI/2.0
-	<< "\nMean scattered energy = " << D_tot/m_2pi
-	<< "\nScattering albedo = " << D_tot*(2.0*NumOrient/M_PI)/s
-	<< "\nAll done. Please, press any key.";
+	cout << "\nTotal number of body orientation = " << NumOrient;
+	cout << "\nTotal scattering energy = " << D_tot;
+	cout << "\nTotal incoming energy = " << s;
+	cout << "\nCross section = " << s*NRM;
+	cout << "\nAll done. Please, press any key.";
 	delete Body;
-	if (Sorting)
-		DelFace();
+
 	return 0;
 }
 //==============================================================================
@@ -289,8 +294,7 @@ int main(int argc, char* argv[])
 //The function that takes outgoing beams into account
 void  Handler(Beam& bm)
 {
-	uint  pn = 0, szP = SizeP(bm);
-	uint vi=0;
+	uint  szP = SizeP(bm);
 	// If there is a special list of the beams to take into account, check if the beam "bm" is on the list
 	if (Sorting)
 	{		
@@ -316,18 +320,19 @@ void  Handler(Beam& bm)
 	matrix bf = Mueller(bm());
 	//----------------------------------------------------------------------------
 	// Collect the beam in array
-	const unsigned int ZenAng = round(acos(bm.r.z)/SizeBin);
-	if (ZenAng==0)
+
+	if(bm.r.z >= 1-DBL_EPSILON)
 	{
 		back += Area*bf;
 	}
 	else 		
-		if (ZenAng==ThetaNumber)
+		if(bm.r.z <= DBL_EPSILON-1)
 		{
 			forw += Area*bf;
 		}
 		else {
 			// Rotate the Mueller matrix of the beam to appropriate coordinate system
+			const unsigned int ZenAng = round(acos(bm.r.z)/SizeBin);
 
 			double tmp = SQR(bm.r.y);
 			if(tmp > DBL_EPSILON) {
@@ -362,9 +367,6 @@ int ReadFile(char* name, double* params, unsigned int n)
 		case 2: _NoF =  7; break;
 		case 3: _NoF = 20; break;
 		case 4: _NoF = 14; break;
-		case 5: _NoF = 6; break;
-		case 6: _NoF = 4; break;
-		case 7: _NoF = 5; break;
 	}
 	Itr = params[10];
 
@@ -373,13 +375,6 @@ int ReadFile(char* name, double* params, unsigned int n)
 	Sorting = strtod(buf, NULL);
 	// If there is a special list of beams
 	if(Sorting>0) {
-		Face = new unsigned int*[int(Itr)+1];
-		for(unsigned int i=0;i<Itr+1; i++)
-			Face[i] = new unsigned int[_NoF];
-
-		for(unsigned int i=0;i<Itr+1;i++)
-			for(unsigned int j=0;j<_NoF;j++)
-				Face[i][j] = 0;
 
 		for(unsigned int j=0;j<Sorting;j++) {
 			if(in.eof()) return 1;
@@ -406,9 +401,8 @@ void MaskAppend(char s[], unsigned int n)
 		int facet_numb=strtol(buf,&end,10); 
 		if (strlen(buf)!=strlen(end))
 		{
-			if ((facet_numb>_NoF)||(facet_numb<0)) throw "Error! Incorrect parameters of trajectories in data file";
+			if ((facet_numb>(int)_NoF)||(facet_numb<0)) throw "Error! Incorrect parameters of trajectories in data file";
 			ch.push_back(facet_numb);
-			Face[intern_numb][facet_numb] = 1; 
 			intern_numb++; 
 		}
 	}
@@ -418,20 +412,16 @@ void MaskAppend(char s[], unsigned int n)
 }
 //==============================================================================
 
-void DelFace(void)
-{
-	for(unsigned int i=0;i<Itr+1; i++)
-		delete[] Face[i];
-	delete[] Face;
-}
+
 
 void ShowTitle(void)
  {
-  cout << "*************************************************************\
+  cout << "*************************************************************************\
          \n Light Scattering by Nonspherical Particles.                 \
          \n (c)Group of Wave Dispersion Theory,                    \
-         \n    Institute of Atmospheric Optics RAS, Tomsk, Russia, 2014 \
-         \n*************************************************************";
+		 \n    Institute of Atmospheric Optics RAS, Tomsk, Russia, 2015 \
+		 \n The source code is distributed under the GNU General Public License (GPL) \
+		 \n*************************************************************************";
  }
 
 //==============================================================================
