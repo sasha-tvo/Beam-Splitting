@@ -27,7 +27,7 @@ void Frame::AllocMem(void) // allocation of memory for particle
 	this->Gr = new int*[this->K];
 	this->Gran = new double*[this->K];
 	for(unsigned int i=0; i<this->K; i++) {
-		this->Gr[i] = new int[this->Km+1];
+		this->Gr[i] = new int[this->Km+2];
 		this->Gran[i] = new double[4];
     }
 }
@@ -50,7 +50,7 @@ Frame Frame::operator=(const Frame &f)
 	this->AllocMem();
 	for(unsigned int i=0; i<this->M; i++) this->p[i] = f.p[i];
 	for(unsigned int i=0; i<this->K; i++) {
-		for(unsigned int j=0; j<this->Km+1; j++) {
+		for(unsigned int j=0; j<this->Km+2; j++) {
 			this->Gr[i][j] = f.Gr[i][j];
 			if(j<4) this->Gran[i][j] = f.Gran[i][j];
 		}

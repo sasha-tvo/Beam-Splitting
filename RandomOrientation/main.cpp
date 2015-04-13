@@ -276,14 +276,14 @@ int main(int argc, char* argv[])
 	out << "\nTotal number of body orientation = " << NumOrient;
 	out << "\nTotal scattering energy = " << D_tot;
 	out << "\nTotal incoming energy = " << s;
-	out << "\nCross section = " << s*NRM;
+	out << "\nAveraged cross section = " << s*NRM;
 	out.close();
 	//----------------------------------------------------------------------------
 	// some information for user
 	cout << "\nTotal number of body orientation = " << NumOrient;
 	cout << "\nTotal scattering energy = " << D_tot;
 	cout << "\nTotal incoming energy = " << s;
-	cout << "\nCross section = " << s*NRM;
+	cout << "\nAveraged cross section = " << s*NRM;
 	cout << "\nAll done. Please, press any key.";
 	delete Body;
 
