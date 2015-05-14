@@ -50,7 +50,7 @@ list<Chain>		mask;						///< List of trajectories to take into account
 //list<Chain>		AllowedMask;				///< Mask of allowed trajectories, noly this trajectories can be in mask
 Point3D			k(0,0,1),					///< Direction on incident wave
 				Ey(0,1,0);					///< Basis for polarization characteristic of light
-bool			perpend_diff;				///< If true - diffraction will be calculated with Shifted screen, perpendicular to propagation direction; if false - diffraction will be calculated with incline screen
+int				perpend_diff;				///< If true - diffraction will be calculated with Shifted screen, perpendicular to propagation direction; if false - diffraction will be calculated with incline screen
 //==============================================================================
 const uint		NumberOfParameters = 16;		///< Number of lines in data files, except trajectories
 double			params[NumberOfParameters];		///< Array of input data
@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
 	ConusGrad =				params[12];
 	ThetaNumber =			params[13];
 	PhiNumber =				params[14];
-	perpend_diff =			(params[15]>0.5?true:false);
+	perpend_diff =			params[15];
 
 	if (Halh_Height<=0 || Radius<=0)
 	{
@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
 	clock_t tm = clock();
 
 	// for Okamoto
-	double Th_inc=0.0;//grad
+	double Th_inc=160.0;//40.0;//grad
 
 	k=Point3D(sin(Th_inc*Rad),0,cos(Th_inc*Rad));			///< Direction on incident wave
 	//Ey(0,1,0);								///< Basis for polarization characteristic of light
@@ -507,7 +507,7 @@ void Handler(Beam& bm)
 
 	double lng_proj0 = bm.lng+r0*bm.r;
 
-	if (perpend_diff)
+	/*if (perpend_diff)
 		bm.SetCoefficients_abcd(bm.r, bm.T, bm.F, r0);
 	else
 	{
@@ -526,6 +526,7 @@ void Handler(Beam& bm)
 		}
 		bm.SetCoefficients_abcd(bm.N, Nx, Ny, r0);
 	}
+	*/
 	for (uint  i_fi=0; i_fi<=PhiNumber; i_fi++)
 	{
 		double f = (double)i_fi*df,
@@ -542,7 +543,7 @@ void Handler(Beam& bm)
 					vt;
 
 			double ctetta = bm.r*vr;
-			if (ctetta > 0.17364817766693034885171662676931) //return;// if (tetta>80 degrees) skeep
+			//if (ctetta > 0.17364817766693034885171662676931) //return;// if (tetta>80 degrees) skeep
 			{
 				if (!j_tt)
 					vf = -Ey;
@@ -553,19 +554,42 @@ void Handler(Beam& bm)
 
 				matrixC Jn_rot(2,2);
 				complex fn(0,0);
-				if (perpend_diff)
+				Point3D n0=bm.r;
+				Point3D ns=bm.N;
+				Point3D nr=vr;
+				switch(perpend_diff)
 				{
-					Jn_rot[0][0]=-bm.F*vf; Jn_rot[0][1]= bm.T*vf;
-					Jn_rot[1][0]= bm.F*vt; Jn_rot[1][1]=-bm.T*vt;
-					fn = bm.DiffractionShiftedPr(vr, lm);
-					//fn = bm.DiffractionShifted(vr, lm);
-				}
-				else
-				{
-					Jn_rot[0][0]=-(bm.N%bm.T)*vf; Jn_rot[0][1]=-(bm.N%bm.F)*vf;
-					Jn_rot[1][0]= (bm.N%bm.T)*vt; Jn_rot[1][1]= (bm.N%bm.F)*vt;
-					fn = bm.DiffractionInclinePr(vr, lm);
-					//fn = bm.DiffractionIncline(vr, lm);
+				case 0:
+					{
+						Jn_rot[0][0]=-bm.F*vf; Jn_rot[0][1]= bm.T*vf;
+						Jn_rot[1][0]= bm.F*vt; Jn_rot[1][1]=-bm.T*vt;
+						fn = bm.DiffractionShifted(vr, lm);
+					}; break;
+				case 1:
+					{
+						Jn_rot[0][0]=-(bm.N%bm.T)*vf; Jn_rot[0][1]=-(bm.N%bm.F)*vf;
+						Jn_rot[1][0]= (bm.N%bm.T)*vt; Jn_rot[1][1]= (bm.N%bm.F)*vt;
+						fn = bm.DiffractionIncline(vr, lm);
+					}; break;
+				case 2:
+					{
+						Jn_rot[0][0]=((nr%(ns%bm.T))-nr%(nr%(ns%(n0%bm.T))))*vt/2.0; Jn_rot[0][1]=((nr%(ns%bm.F))-nr%(nr%(ns%(n0%bm.F))))*vt/2.0;
+						Jn_rot[1][0]=((nr%(ns%bm.T))-nr%(nr%(ns%(n0%bm.T))))*vf/2.0; Jn_rot[1][1]=((nr%(ns%bm.F))-nr%(nr%(ns%(n0%bm.F))))*vf/2.0;
+						fn = bm.DiffractionIncline(vr, lm);
+					}; break;
+				case 3:
+					{
+						Jn_rot[0][0]=((nr%(ns%bm.T)))*vt/1.0; Jn_rot[0][1]=((nr%(ns%bm.F)))*vt/1.0;
+						Jn_rot[1][0]=((nr%(ns%bm.T)))*vf/1.0; Jn_rot[1][1]=((nr%(ns%bm.F)))*vf/1.0;
+						fn = bm.DiffractionIncline(vr, lm);
+					}; break;
+				case 4:
+					{
+						Jn_rot[0][0]=(nr%(nr%(ns%(n0%bm.T))))*vt/1.0; Jn_rot[0][1]=(nr%(nr%(ns%(n0%bm.F))))*vt/1.0;
+						Jn_rot[1][0]=(nr%(nr%(ns%(n0%bm.T))))*vf/1.0; Jn_rot[1][1]=(nr%(nr%(ns%(n0%bm.F))))*vf/1.0;
+						fn = bm.DiffractionIncline(vr, lm);
+					}; break;
+				default:  cout<< "Error in diffraction type!!!";
 				}
 				matrixC fn_jn = exp_im(m_2pi*(lng_proj0-vr*r0)/lm)*bm();
 				Jones_temp[vi].insert(i_fi,j_tt,fn*Jn_rot*fn_jn);
