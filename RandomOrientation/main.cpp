@@ -546,7 +546,7 @@ void Handler(Beam& bm)
 
 			double ctetta = vr*(bm.N); //kosoi
 			//double ctetta = vr*(bm.r); //ploskii
-			//if (ctetta > 0)//  if (tetta<90 degrees)
+			if (ctetta > 0)//  if (tetta<90 degrees)
 			{
 				if (!j_tt)
 					vf = -Ey;

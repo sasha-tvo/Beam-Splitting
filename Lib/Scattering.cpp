@@ -165,12 +165,18 @@ double  Crystal::FTforConvexCrystal(Hand Handler) const
 		const Point3D n = this->NormToFacet(l);
 		csa = k*n;
 		if(csa < Eps1) continue;
-		Beam ext_beam, int_beam; //
+		Beam ext_beam, int_beam, shd_beam; // !!!! shd_beam только случай нормального падения
 		//--------------------------------------------------------------------------
 		if(csa >= Eps2) { // case of the normal incidence
 			int_beam(0,0) = int_beam(1,1) = 2.0/(this->RefI+1.0); // internal field
 			int_beam.e = Ey;
 			int_beam.r = -k;
+
+			shd_beam(0,0) = shd_beam(1,1) = -1.0; // !!!!только случай нормального падения
+			shd_beam.e = Ey; // !!!!только случай нормального падения
+			shd_beam.r = -k; // !!!!только случай нормального падения
+
+
 			ext_beam(0,0)= (this->RefI-1.0)/(this->RefI+1.0);
 			ext_beam(1,1)= -(this->RefI-1.0)/(this->RefI+1.0); 
 			ext_beam.e = Ey;
@@ -211,19 +217,28 @@ double  Crystal::FTforConvexCrystal(Hand Handler) const
 		for(unsigned int j=0; this->Gr[l][j+1]!=-1 && j<this->Km; j++) { // edge loop
 			ext_beam.PushFront(this->p[this->Gr[l][j]]);
 			int_beam.PushFront(this->p[this->Gr[l][j]]);
+
+		}
+		for(unsigned int j=0; this->Gr[7][j+1]!=-1 && j<this->Km; j++) { // edge loop
+			shd_beam.PushFront(this->p[this->Gr[7][j]]); // !!!!только случай нормального падения
 		}
 		if(this->Phase()) {  // taking into account the optical path of the beams
 			Point3D pnt = CenterOfBeam(int_beam);
 			int_beam.D = -int_beam.r*pnt;
 			ext_beam.D = -ext_beam.r*pnt;
+			shd_beam.D = 0;// !!!!только случай нормального падения
 			int_beam.lng = d-k*pnt;
 			ext_beam.lng = int_beam.lng + fabs(d+ext_beam.D);
+			shd_beam.lng= 2.0*d;// !!!!только случай нормального падения
 		}
+		shd_beam.PushFrontP(7); // !!!!только случай нормального падения
 		ext_beam.PushFrontP(l);
 		int_beam.PushFrontP(l);
 		s += AreaOfBeam(ext_beam)*csa; // equal to call of CrossSection(ext_beam)
 		ext_beam.N = n;
+		shd_beam.N = -n;
         Handler(ext_beam.Rotate(k,Ey)); // handling of the outgoing beam
+		Handler(shd_beam); // !!!!только случай нормального падения
 		// handling of the internal beam
 		this->TracingOfInternalBeam(int_beam, l, Handler);
 	} // end of facet loop
