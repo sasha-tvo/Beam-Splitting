@@ -1,4 +1,4 @@
-0     //0  the kind of the particle (0-prizm, 1-bullet, 2-pyramid, 3-tapered prizm, 4-cup)
+0     //0  the kind of the particle (0-prizm, 1-bullet, 2-pyramid, 3-tapered prizm, 4-cup) 
 0     //1  tip angle of pyramid 56 degrees (1-yes, 0-no)
 40    //2  the prism radius
 100   //3  the prism semiheight

@@ -2,7 +2,7 @@
 #include <QDir>
 #include <QtCore/QtGlobal>
 
-#include <conio.h>
+#include <stdio.h>
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
@@ -11,13 +11,13 @@
 #include <math.h>
 
 //Axillary functions
-#include "..\Lib\trajectory.hpp"
-#include "..\Lib\PhysMtr.hpp"
-#include "..\Lib\Mueller.hpp"
+#include "../Lib/trajectory.hpp"
+#include "../Lib/PhysMtr.hpp"
+#include "../Lib/Mueller.hpp"
 
 
 //The beam-splitting
-#include "..\Lib\particle.hpp"
+#include "../Lib/particle.hpp"
 
 
 
@@ -81,13 +81,13 @@ int main(int argc, char* argv[])
 	try
 	{
 		if(ReadFile((char*)"params.dat", params, NumberOfParameters)) {
-			cout << "\nError! Incorrect input file. Press any key for exit.";
-			getch(); return 1;
+			cout << "\nError! Incorrect input file. Press ENTER for exit.";
+			getchar(); return 1;
 		}
 	}   
 	catch(const char* s) {
-		cout << endl << s << "\nPress any key.";
-		getch(); return 1;
+		cout << endl << s << "\nPress ENTER.";
+		getchar(); return 1;
 	}
 	cout << "OK \n";
 	//Assign the parameters from data file.
@@ -195,13 +195,13 @@ int main(int argc, char* argv[])
 	}
 	catch(char* s) {
 		cout << endl << s << "\nPress any key.";
-		getch(); return 1;
+		getchar(); return 1;
 	}
 	t = clock()-t;
 	// End of the main loop
 	//----------------------------------------------------------------------------
 
-	cout << "\nTotal time of calculation = " << t/CLK_TCK << " seconds";
+	cout << "\nTotal time of calculation = " << t/CLOCKS_PER_SEC << " seconds";
 
 	//Analytical averaging over alpha angle
 	//----------------------------------------------------------------------------
@@ -272,7 +272,7 @@ int main(int argc, char* argv[])
 	M.close();	
 	//----------------------------------------------------------------------------
 	// Information for log-file
-	out << "\nTotal time of calculation = " << t/CLK_TCK << " seconds";	
+	out << "\nTotal time of calculation = " << t/CLOCKS_PER_SEC << " seconds";
 	out << "\nTotal number of body orientation = " << NumOrient;
 	out << "\nTotal scattering energy = " << D_tot;
 	out << "\nTotal incoming energy = " << s;
@@ -284,7 +284,8 @@ int main(int argc, char* argv[])
 	cout << "\nTotal scattering energy = " << D_tot;
 	cout << "\nTotal incoming energy = " << s;
 	cout << "\nAveraged cross section = " << s*NRM;
-	cout << "\nAll done. Please, press any key.";
+	cout << "\nAll done. Please, press ENTER.";
+	getchar();
 	delete Body;
 
 	return 0;
@@ -351,6 +352,7 @@ const int size = 256;
 
 int ReadFile(char* name, double* params, unsigned int n)
 {
+	setlocale(LC_NUMERIC,"C");
 	char buf[size]=""; //temp buffer
 	ifstream in(name, ios::in);
 	for(unsigned int i=0; i<n; i++) {
