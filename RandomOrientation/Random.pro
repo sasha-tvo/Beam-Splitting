@@ -6,8 +6,7 @@
 
 QT       += core
 
-QT       -= gui
-  bnvbnvbnvbnvbnv
+QT       -= gui  
 TARGET = Random
 CONFIG   += console
 CONFIG   -= app_bundle
