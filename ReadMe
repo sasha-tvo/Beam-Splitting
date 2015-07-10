@@ -1,1 +1,4 @@
 Geometrical optics approximation.
+To run, after compiling copy PARAMS.DAT to the execution folder.
+The realised version is here:
+https://github.com/sasha-tvo/Beam-Splitting/releases

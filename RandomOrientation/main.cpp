@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
 	// Read parameters from data file
 	try
 	{
-		if(ReadFile((char*)"params.dat", params, NumberOfParameters)) {
+		if(ReadFile((char*)"PARAMS.DAT", params, NumberOfParameters)) {
 			cout << "\nError! Incorrect input file. Press ENTER for exit.";
 			getchar(); return 1;
 		}
