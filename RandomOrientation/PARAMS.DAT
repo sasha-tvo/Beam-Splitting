@@ -8,7 +8,7 @@
 101    //7  full number of orientations for axial rotation angle, must be uneven 
 100   //8  full number of orientations for zenith angle
 180   //9 the size of the output array
-4     //10 the number of the internal reflections for every beam
+0     //10 the number of the internal reflections for every beam
 0     //11 extraction of the delta-function for backward and forward directions
 0    // 12 if 1 particle rotates by discret steps, if 0 particle rotates with random function.
 0     // 13 number of trajectories, 0 means all trajectories

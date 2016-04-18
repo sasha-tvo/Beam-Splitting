@@ -36,6 +36,8 @@ public:
 			r,             ///< direction of the beam in 3D space
 			T,F,N; 
 
+	bool isInternal = true; ///< internal or external
+
 	Beam(void) : mt(2,2), lng(0) 
 		{ this->mt.Identity(); }
 	Beam(const std::list<Point3D>& _v, double l = 0) :
@@ -55,6 +57,7 @@ public:
 		this->T = b.T;
 		this->F = b.F;
 		this->N = b.N;
+		this->isInternal = b.isInternal;
 		return *this;
 	}
 

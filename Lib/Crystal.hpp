@@ -14,6 +14,9 @@
 //#include "Scattering.hpp"
 #endif
 
+#include <xmmintrin.h>
+#include <smmintrin.h>
+
 /** @addtogroup Tracer Beam splitting algorithm
  * @{
  */
@@ -104,7 +107,6 @@ class Crystal : public Frame, public BeamSplitting {
 	/// This function checks if the point \b a lies on the facet number \b ii.
     bool PointInFacet(const Point3D& a, int ii) const;
 	/// Beam splitting algorithm for internal beam. The realization is in scattering.cpp
-    int TracingOfInternalBeam(Beam &, unsigned int, Hand) const;
 protected:
 	/// This flag specifies whether the optical path is taking into account or not
 	bool PhaseDelay; // taking into account the optical path
@@ -152,7 +154,7 @@ public:
 	/// The function returns a projection of a facet number \b i to the one of 2D planes: YZ (k=0), XZ (k=1), XY (k=2).
 	Polyg Projection(unsigned int i, int k) const;
 	// The function returns a list of vertex of Polygon in 3D by it's \b ProjectionPolygon, which has been projected from facet number i to on of 2D planes: YZ (k=0), XZ (k=1), XY (k=2)
-    std::list<Point3D> Retrieve(Polyg& ProjectionPolygon, unsigned int i, int k) const;
+	void Retrieve(Polyg& ProjectionPolygon, unsigned int i, int k, std::list<Point3D> &g) const;
 	/// The function rotates the particle by Euler's angles: Betta, Gamma, Alpha.
 	virtual void ChangePosition(double t, double p, double f) //bt gm alph
 		{ this->SetVertices(); this->ChangeVertices(t,p,f); this->ChangeFacets(); }
@@ -169,7 +171,15 @@ public:
     double FTforConvexCrystal(Hand Handler) const;
 	/// The function calculates an intersection between a beam \b Bm and the facet number \b i. The result of intersection is in \b pl. 
 	///@return \b true, if there is an intersection
-    bool Intersection(const Beam& Bm, unsigned int i, std::list<Point3D> & pl) const;
+	int TracingOfInternalBeam(/*Beam &i_beam, unsigned int,*/ Hand) const;
+	bool Intersection(const Beam& Bm, unsigned int i, std::list<Point3D> & pl) const;
+	bool Intersection2(const Beam& beam, unsigned int i, std::list<Point3D>& outputBeam) const;
+	inline bool projection(const Beam& inputBeam, __m128 *_output_points, __m128 _normal, unsigned int &facetIndex) const;
+	inline int calcFacetSize(unsigned int facetIndex) const;
+	inline void setOutputBeam(__m128 *_output_points, int outputSize, std::list<Point3D>& outputBeam) const;
+
+private:
+	Beam TracingOfExternalBeam(double csta, double csa, Hand Handler, unsigned int l, double s) const;
 };
 //------------------------------------------------------------------------------
 

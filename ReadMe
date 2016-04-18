@@ -1,4 +1,1 @@
-Geometrical optics approximation.
-To run, after compiling copy PARAMS.DAT to the execution folder.
-The release version is here:
-https://github.com/sasha-tvo/Beam-Splitting/releases
+Geometrical optics approximation with SSE4. This is a develop version.

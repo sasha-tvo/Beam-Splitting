@@ -11,8 +11,11 @@ TARGET = Random
 CONFIG   += console
 CONFIG   -= app_bundle
 
+DESTDIR = ../bin
+
 TEMPLATE = app
 QMAKE_CXXFLAGS += -std=gnu++11
+QMAKE_CXXFLAGS+=-march=corei7 -msse4.2
 
 SOURCES += main.cpp \
     ../Lib/PhysMtr.cpp \
@@ -26,4 +29,15 @@ SOURCES += main.cpp \
     ../Lib/Scattering.cpp \
     ../Lib/beam.cpp
 
-HEADERS +=
+HEADERS += \
+    ../Lib/Beam.hpp \
+    ../Lib/compl.hpp \
+    ../Lib/Crystal.hpp \
+    ../Lib/Geometry.hpp \
+    ../Lib/matrix.hpp \
+    ../Lib/Mueller.hpp \
+    ../Lib/particle.hpp \
+    ../Lib/PhysMtr.hpp \
+    ../Lib/service.hpp \
+    ../Lib/trajectory.hpp \
+    ../Lib/Intersection.h

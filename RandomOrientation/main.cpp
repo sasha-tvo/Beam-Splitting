@@ -184,9 +184,10 @@ int main(int argc, char* argv[])
 					beta=acos(((double)(rand()) / ((double)RAND_MAX))*2.0-1.0);
 					P=1.0;
 				}
+//				beta = gamma = 0;
 				Body->ChangePosition(beta, gamma,0.0);
 
-				s += P*Body->FTforConvexCrystal(Handler);
+				s += P*Body->FTforConvexCrystal/*TracingOfInternalBeam*/(Handler);
 				if(!(j%100)) cout<<'.';
 			}			
 			cout << "\n" << (double)(i+1)/(double)BetaNumber*100.0<<"% ";
@@ -281,8 +282,8 @@ int main(int argc, char* argv[])
 	//----------------------------------------------------------------------------
 	// some information for user
 	cout << "\nTotal number of body orientation = " << NumOrient;
-	cout << "\nTotal scattering energy = " << D_tot;
-	cout << "\nTotal incoming energy = " << s;
+	cout << "\nTotal scattering energy = " << D_tot*NRM;
+//	cout << "\nTotal incoming energy = " << s;
 	cout << "\nAveraged cross section = " << s*NRM;
 	cout << "\nAll done. Please, press ENTER.";
 	getchar();

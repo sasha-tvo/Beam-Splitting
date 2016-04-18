@@ -105,7 +105,7 @@ double  CrossSection(const Beam &bm)
 //------------------------------------------------------------------------------
 
 // the area of of the beam
-double  AreaOfBeam(const Beam &bm)
+double AreaOfBeam(const Beam &bm)
 {
 	double s = 0;
 	std::list<Point3D>::const_iterator p = bm.v.begin();

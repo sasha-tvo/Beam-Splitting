@@ -90,13 +90,11 @@ Polyg Crystal::Projection(unsigned int i, int k) const
 }
 
 // recovering the 3D result polygon from its 2D projection to the facet i
-std::list<Point3D> 
-Crystal::Retrieve(Polyg& p, unsigned int i, int k) const
+void Crystal::Retrieve(Polyg& p, unsigned int i, int k, std::list<Point3D> &g) const
 {
 	#ifdef _DEBUG
 	if(k > 2 || i > this->K) throw " Crystal::Retrieve : Error! ";
 	#endif
-	std::list<Point3D> g;
 	const double A = this->Gran[i][0], B = this->Gran[i][1],
 							 C = this->Gran[i][2], D = this->Gran[i][3];
 	for(unsigned int n=0; n<p.size(); n++, p.advance(CLOCKWISE)) {
@@ -109,17 +107,15 @@ Crystal::Retrieve(Polyg& p, unsigned int i, int k) const
 		}
 		g.push_back(res);
 	}
-	return g;
 }
 
 // intersection of the incident beam and projection of facet
-bool Crystal::Intersection
-(const Beam& bm, unsigned int i, std::list<Point3D>& Result) const
+bool Crystal::Intersection(const Beam& bm, unsigned int i, std::list<Point3D>& Result) const
 {
-	const Point3D n = this->NormToFacet(i);
+	const Point3D n = NormToFacet(i);
 	// kind of the projection
 	const int fl = nMX(fabs(n.x*bm.r.x), fabs(n.y*bm.r.y), fabs(n.z*bm.r.z));
-	Polyg 	facet = this->Projection(i, fl), // projection of the facet
+	Polyg 	facet = Projection(i, fl), // projection of the facet
 			beam = bm.Projection(Facet(i), fl); // projection of the beam
 	//----------------------------------------------------------------------------
 	Point2D max_fct(facet.point()), min_fct(facet.point()),
@@ -139,7 +135,8 @@ bool Crystal::Intersection
 		if(p.y < min_bm.y) min_bm.y = p.y;
 	}
 	if(max_fct.x<=min_bm.x || max_bm.x<=min_fct.x ||
-		 max_fct.y<=min_bm.y || max_bm.y<=min_fct.y) return false;
+		 max_fct.y<=min_bm.y || max_bm.y<=min_fct.y)
+		return false;
 	Polyg intersection;
 	#ifdef _DEBUG
 	const double e = AreaOfConvexPolygon(beam),
@@ -164,7 +161,8 @@ bool Crystal::Intersection
 		#endif
 		const double e = AreaOfConvexPolygon(intersection);
         //if(e < S_eps) return false;
-		Result = this->Retrieve(intersection, i, fl);
+
+		Retrieve(intersection, i, fl, Result);
 		//------------------------------------------------------------------------
 		return true;
 	}
